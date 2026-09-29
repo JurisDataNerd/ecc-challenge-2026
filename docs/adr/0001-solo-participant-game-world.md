@@ -6,7 +6,7 @@ status: proposed
 
 ## Context
 
-The `adian` branch contains the existing Mixel participant world. The `main` branch contains the broader ECC Future Quest React/Vite app and a Phaser 3 game shell. The current `origin/main` ref is shallow, so Git cannot determine a merge base from the history available in this checkout. Their Phaser versions and game flows differ, so the Mixel world must be adapted into the app rather than merged as a whole replacement.
+The `adian` branch contains the existing Mixel participant world. The `main` branch contains the broader ECC Future Quest React/Vite app and a Phaser 3 game shell. After fetching full `origin/main` history, Git still reports no common merge base with `adian`; the histories are independent. Their Phaser versions and game flows also differ, so the Mixel world must be adapted into the app rather than merged as a whole replacement.
 
 The client concept shows an onboarding checkpoint followed by bootcamp milestones. The user chose stage selection from outside the gameplay scenes. V1 is individual and excludes Guild and peer features.
 
@@ -24,7 +24,7 @@ The client concept shows an onboarding checkpoint followed by bootcamp milestone
 - Stage maps can have different layouts and content without implying one continuous world.
 - The integration must adapt `adian`'s Phaser 4 scene behavior to `main`'s Phaser 3 app. Do not replace `main`'s React/Vite dependency baseline with `adian`'s package versions.
 - Main's existing quiz, mission, and role screens are prototype scaffolding. Its client-side XP, HP, boss battles, leaderboard, and talent-pool paths are not production rules and must not be carried into V1 as-is.
-- Build the integration in a separate worktree based on `origin/main` and selectively port the L1 scene/UI and Mixel assets from `adian`. Fetch full history before considering a branch merge; until ancestry is clear, do not merge the branch histories or replace main's app entry, styles, manifest, or lockfile with `adian` files.
+- Build the integration in a separate worktree based on `origin/main` and selectively port the L1 scene/UI and Mixel assets from `adian`. Do not merge the independent branch histories or replace main's app entry, styles, manifest, or lockfile with `adian` files.
 - Mock XP and access states must be labelled as demo data. Production awards must come from authoritative reviewed events and must not affect selection scores.
 - ECC sign-off on program rules remains open; this ADR records the selected prototype direction and remains proposed until that sign-off.
 

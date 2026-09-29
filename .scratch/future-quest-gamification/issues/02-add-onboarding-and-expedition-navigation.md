@@ -11,7 +11,7 @@ Use `origin/main` as the app base and route the Participant from separate Future
 ## Acceptance criteria
 
 - Build in a separate worktree based on `origin/main`; retain its React/Vite/Phaser 3 baseline.
-- The current `origin/main` ref is shallow, so the merge base is not available in this checkout. Fetch full history before considering a branch merge; selectively port the Mixel L1 files in issue 03 in the meantime.
+- The full branch histories have no common merge base. Do not merge the branch histories; selectively port the Mixel L1 files in issue 03.
 - Future Base onboarding is a separate initial checkpoint before bootcamp L1.
 - The Expedition map is outside gameplay scenes and lists L1, L2, and L3 with available or locked state.
 - Selecting a stage loads its own scene; returning to the Expedition map lets the Participant choose another stage.

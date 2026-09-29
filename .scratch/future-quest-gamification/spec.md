@@ -47,7 +47,7 @@ The current Supabase helper supports file uploads; it does not yet provide autho
 
 ## Delivery sequence
 
-1. Create an isolated integration worktree from `origin/main` and retain this planning documentation. The current `origin/main` ref is shallow and this checkout has no available merge base; fetch full history before considering a branch merge.
+1. Create an isolated integration worktree from `origin/main` and retain this planning documentation. Even after fetching full history, `origin/main` and `adian` have no common merge base; do not merge the branch histories.
 2. Selectively port the L1 scene/UI and Mixel assets into the main app; keep main's app entry, styles, package manifest, lockfile, and Phaser 3 baseline.
 3. Add the onboarding entry and Expedition map navigation in the main app.
 4. Connect L1 boards to the mock quiz and mission screens.
