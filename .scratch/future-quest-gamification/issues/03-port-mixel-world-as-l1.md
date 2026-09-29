@@ -1,6 +1,8 @@
 # Port the existing Mixel world as bootcamp L1
 
-Status: ready-for-agent
+Status: ready-for-human
+
+Implementation: complete; ready for review.
 
 Spec: `../spec.md`
 
@@ -18,6 +20,13 @@ Make the current `adian` Mixel game the separate L1 scene in the main app.
 - Keep movement, Quest boards, and task interactions individual and combat-free.
 - Connect L1 boards to the existing quiz and mission screens as mock prototype flows. Preserve the selected track and task context when returning to L1.
 - Do not use client XP totals or boss-battle state from `adian` or `main` as verified production progress.
+
+## Implementation record
+
+- Ported the Mixel map and selected character sprites into a Phaser 3 scene without replacing the app stack.
+- Added explicit Quest board interaction and connected L1 to the mock quiz and mission flows.
+- Added collision checks for the baked Mixel map and water in the L2/L3 maps; source assets remain unmodified and licensed.
+- Browser E2E verified the L1 scene, Quest board, quiz XP, mission submission, and read-only access. Screenshots are linked in the PR description.
 
 ## Sequence
 

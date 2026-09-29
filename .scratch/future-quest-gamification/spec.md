@@ -1,6 +1,8 @@
 # Spec: ECC Future Quest Gamification
 
-Status: ready-for-agent
+Status: ready-for-human
+
+Implementation: V1 prototype is implemented on `integration/future-quest-v1`; ready for review.
 
 ## Problem
 
@@ -60,5 +62,5 @@ See the implementation issues in `issues/` for ownership and acceptance criteria
 ## Open items
 
 - ECC still needs to formally sign off on program rules; the accepted values are planning defaults until then.
-- The team supplies L2 and L3 quest content and scene details during implementation.
+- L2 and L3 use the maps and quest content already present in `origin/main`; additional team-authored changes can be reviewed separately.
 - The production Supabase phase needs confirmed quiz, mission acceptance, final-review rubric, selection-result, and scheduled-opening data contracts.

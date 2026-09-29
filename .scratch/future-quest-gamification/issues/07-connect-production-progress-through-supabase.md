@@ -2,6 +2,8 @@
 
 Status: needs-info
 
+Implementation: deferred production phase; requires the contracts listed below.
+
 Spec: `../spec.md`
 
 ## Goal

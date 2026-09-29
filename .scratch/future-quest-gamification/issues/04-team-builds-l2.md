@@ -2,6 +2,8 @@
 
 Status: ready-for-human
 
+Implementation: complete; ready for review.
+
 Owner: Team
 Spec: `../spec.md`
 
@@ -17,6 +19,12 @@ Deliver L2 as a team-owned stage with its own scene and map.
 - Keep the same individual controls and explicit Quest board interaction used in L1.
 - Returning to the Expedition map preserves the Participant's stage and task state.
 - Do not add Guild, peer-help, multiplayer, combat, or XP-for-movement mechanics.
+
+## Implementation record
+
+- Connected the team-pushed L2 town map and Build quests from `origin/main` as a separate playable scene.
+- Reused the track-aware Quest board and mock mission/review flow.
+- Browser E2E verified the L2 scene, board interaction, review queue, and scheduled-opening gate. Screenshots are linked in the PR description.
 
 ## Sequence
 

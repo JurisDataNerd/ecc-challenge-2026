@@ -1,6 +1,8 @@
 # Add onboarding and Expedition map navigation in the main app
 
-Status: ready-for-agent
+Status: ready-for-human
+
+Implementation: complete; ready for review.
 
 Spec: `../spec.md`
 
@@ -18,6 +20,12 @@ Use `origin/main` as the app base and route the Participant from separate Future
 - L2/L3 may use clearly marked placeholders until their team-owned scene tickets are delivered.
 - Keep Participant V1 individual and preserve the existing Mentor/Admin role workspaces.
 - Do not bring combat, HP, boss-battle rewards, Guild, leaderboards, or talent-pool social features into the Participant V1 flow.
+
+## Implementation record
+
+- Added separate Future Base onboarding, the out-of-scene Expedition map, and return-to-map stage switching.
+- Kept the Participant flow individual and retained Mentor/Admin workspaces.
+- Browser E2E verified onboarding, locked and unlocked stages, and entry to separate scenes. Screenshots are linked in the PR description.
 
 ## Sequence
 

@@ -1,6 +1,8 @@
 # Add the individual Future Passport and mock progress
 
-Status: ready-for-agent
+Status: ready-for-human
+
+Implementation: complete; ready for review.
 
 Spec: `../spec.md`
 
@@ -18,6 +20,12 @@ Present a participant's track, XP, and stage milestones using visibly labelled d
 - Use mock published-result and scheduled-opening values to demonstrate stage locks and read-only access.
 - Do not show Impact, Opportunity, or Readiness categories, Guild reputation, teammate progress, leaderboards, or social rewards.
 - Do not describe local mock values as verified, authoritative, or persistent.
+
+## Implementation record
+
+- Added the individual Future Passport, stage milestones, and clearly labeled local demo values.
+- Browser E2E verified 10 XP for a quiz's first submitted attempt, 20 XP on mission acceptance, no quality bonus at 7/10, and the bonus at the exact 8/10 threshold.
+- Browser E2E verified results and scheduled opening are both required, and non-advancers see prior work in read-only mode. Screenshots are linked in the PR description.
 
 ## Sequence
 

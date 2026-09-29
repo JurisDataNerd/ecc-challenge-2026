@@ -2,6 +2,8 @@
 
 Status: ready-for-human
 
+Implementation: complete; ready for review.
+
 Owner: Team
 Spec: `../spec.md`
 
@@ -18,6 +20,12 @@ Deliver the team-owned L3 scene and place the existing main-app final-pitch work
 - Keep the same individual controls and explicit Quest board interaction used in L1.
 - Returning to the Expedition map preserves the Participant's stage and task state.
 - Do not add Guild, peer-help, multiplayer, combat, or XP-for-movement mechanics.
+
+## Implementation record
+
+- Connected the team-pushed L3 map and Pitch quests from `origin/main` as a separate playable scene.
+- Added the final-pitch mission to L3; V1 has no fourth bootcamp stage.
+- Browser E2E verified the L3 scene, final-pitch board entry, review flow, and scheduled-opening gate. Screenshots are linked in the PR description.
 
 ## Sequence
 
