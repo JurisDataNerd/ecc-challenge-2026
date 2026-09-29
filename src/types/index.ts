@@ -95,6 +95,7 @@ export interface Submission {
   review?: {
     mentorId: string;
     mentorName: string;
+    decision?: 'accepted' | 'changes_requested';
     scores: Record<string, number>;
     totalScore: number;
     feedback: string;

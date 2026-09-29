@@ -1,4 +1,4 @@
-import { PathInfo, QuizQuestion, BossMission } from '../types';
+import { PathCode, PathInfo, QuizQuestion, BossMission } from '../types';
 
 export const OFFICIAL_PATHS: Record<string, PathInfo> = {
   professional: {
@@ -61,16 +61,25 @@ export const STAGE_CONFIGS = [
     dates: '29 Okt 2026',
     objective: 'Sempurnakan prototipe, susun metrik keberhasilan, dan siapkan pitch deck final untuk Jakarta.'
   },
-  {
-    ordinal: 4,
-    title: 'Tahap 4: Final Pitching Jakarta',
-    theme: 'Presentasi Finalis & Sidang Dewan Juri',
-    quotaTarget: '9 Finalis → 3 Pemenang Utama',
-    enemyCount: 0,
-    dates: '12 Nov 2026',
-    objective: 'Presentasikan inovasi terbaik Anda secara langsung di hadapan Dewan Juri di Jakarta untuk menentukan pemenang program.'
-  }
 ];
+
+export const TRACK_STAGE_FOCUS: Record<PathCode, Record<1 | 2 | 3, string>> = {
+  professional: {
+    1: 'Validasi tantangan nyata di tempat kerja atau organisasi melalui bukti langsung.',
+    2: 'Rancang prototipe perbaikan praktis dan uji dengan penggunanya.',
+    3: 'Presentasikan solusi yang telah diuji, model operasional, dan rencana 90 hari.'
+  },
+  social_impact: {
+    1: 'Validasi kebutuhan komunitas bersama warga yang mengalaminya.',
+    2: 'Rancang respons yang inklusif dan uji bersama komunitas.',
+    3: 'Presentasikan bukti, dampak berkelanjutan, dan rencana 90 hari.'
+  },
+  business: {
+    1: 'Validasi masalah pelanggan melalui bukti langsung dari pasar.',
+    2: 'Rancang solusi pasar dan uji manfaatnya bersama pelanggan.',
+    3: 'Presentasikan traksi, model bisnis, dan rencana 90 hari.'
+  }
+};
 
 export const STAGE_QUIZZES: QuizQuestion[] = [
   // Stage 1 (1 Enemy)
@@ -273,7 +282,8 @@ export const STAGE_BOSS_MISSIONS: Record<number, BossMission> = {
     allowedFormats: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'image/png', 'image/jpeg'],
     rubricCriteria: [
       { key: 'solution_fit', label: 'Kesesuaian Solusi dengan Masalah Tahap 1', maxScore: 35 },
-      { key: 'prototype_execution', label: 'Kelayakan & Ketuntasan Prototipe', maxScore: 45 },
+      { key: 'prototype_execution', label: 'Kelayakan & Ketuntasan Prototipe', maxScore: 35 },
+      { key: 'evidence_quality', label: 'Kualitas Bukti Uji Pengguna', maxScore: 10 },
       { key: 'user_feedback_action', label: 'Respon Perbaikan atas Masukan Pengguna', maxScore: 20 }
     ]
   },
@@ -292,29 +302,10 @@ export const STAGE_BOSS_MISSIONS: Record<number, BossMission> = {
     maxFiles: 2,
     allowedFormats: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
     rubricCriteria: [
-      { key: 'strategic_impact', label: 'Dampak Strategis & Diferensiasi Nilai', maxScore: 40 },
+      { key: 'strategic_impact', label: 'Dampak Strategis & Diferensiasi Nilai', maxScore: 30 },
+      { key: 'evidence_quality', label: 'Kualitas Bukti Validasi & Traction', maxScore: 10 },
       { key: 'execution_readiness', label: 'Kesiapan Eksekusi & Roadmap 90 Hari', maxScore: 35 },
       { key: 'deck_professionalism', label: 'Kualitas Penyampaian & Ketajaman Data', maxScore: 25 }
-    ]
-  },
-  4: {
-    id: 'boss-mission-s4',
-    stageOrdinal: 4,
-    bossName: 'Dewan Juri Final Jakarta',
-    bossTitle: 'Sidang Penentu 3 Pemenang Utama Program',
-    title: 'Pengumpulan Materi Presentasi Akhir & Dokumen Kesiapan Jakarta',
-    instructions: 'Kirimkan berkas slide presentasi akhir dan ringkasan eksekutif untuk sesi penjurian tatap muka di Jakarta. Pastikan dokumen memuat validasi dampak, kelayakan bisnis, dan rencana implementasi.',
-    deliverables: [
-      'File Slide Presentasi Final (PDF / PPTX maksimum 20MB)',
-      'Lembar Ringkasan Eksekutif 1 Halaman',
-      'Surat Konfirmasi Kehadiran Sesi Finalis Jakarta'
-    ],
-    maxFiles: 3,
-    allowedFormats: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-    rubricCriteria: [
-      { key: 'innovation_merit', label: 'Inovasi & Nilai Kebaruan Solusi', maxScore: 35 },
-      { key: 'viability_sustainability', label: 'Kelayakan Finansial & Keberlanjutan', maxScore: 35 },
-      { key: 'presentation_clarity', label: 'Kejelasan Penyampaian & Ketajaman Tanya Jawab', maxScore: 30 }
     ]
   }
 };
