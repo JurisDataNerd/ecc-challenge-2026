@@ -2,7 +2,7 @@
 
 Status: ready-for-human
 
-Implementation: complete; ready for review.
+Implementation: complete; merged into `origin/main` in PR #1 (`a36e533`); post-merge browser-verified on 2026-09-30.
 
 Owner: Team
 Spec: `../spec.md`

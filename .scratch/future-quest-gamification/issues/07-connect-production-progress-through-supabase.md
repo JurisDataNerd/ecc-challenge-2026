@@ -28,3 +28,7 @@ Replace prototype-only progress and access state with authoritative production d
 ## Sequence
 
 This is a later phase. Keep the first playable prototype on mock data until the needed contracts are available.
+
+## Comments
+
+Repository review on 2026-09-30 confirmed that the PRD schema is logical and not migration-ready, the app helper only uploads to Supabase Storage, and this checkout has no Supabase CLI/configuration, migrations, or configured Supabase/database environment. The authoritative attempt, final-review, selection, and schedule contracts and a production owner are still missing, so this remains deferred and `needs-info`.
