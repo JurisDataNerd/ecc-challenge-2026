@@ -2,7 +2,7 @@
 
 Status: ready-for-human
 
-Implementation: V1 prototype is implemented on `integration/future-quest-v1`; ready for review.
+Implementation: V1 prototype merged into `origin/main` in PR #1 (`a36e533`) on 2026-09-29. Post-merge browser verification was completed on 2026-09-30; see `verification.md`.
 
 ## Problem
 
