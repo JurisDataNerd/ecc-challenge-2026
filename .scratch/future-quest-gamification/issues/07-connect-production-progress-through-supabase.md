@@ -21,6 +21,7 @@ Replace prototype-only progress and access state with authoritative production d
 
 ## Needed
 
+- Confirm which Supabase project is intended for production and provide active access. The authenticated CLI account currently lists `ecc-future-quest-staging` (`gzyqpvihvqgxttpshmde`) and `ecc-future-quest-production` (`ksosknxddshnrtczxtmd`); both report `INACTIVE`, and neither is named exactly `ecc`.
 - Confirmed integration contracts for quiz attempts, accepted missions, final rubric results, selection decisions, and scheduled stage openings.
 - A production owner for the XP ledger and stage-access decision.
 - Confirmation that the current Supabase schema/services expose those authoritative sources. The existing helper inspected for this plan only handles file uploads.
@@ -31,4 +32,4 @@ This is a later phase. Keep the first playable prototype on mock data until the 
 
 ## Comments
 
-Repository review on 2026-09-30 confirmed that the PRD schema is logical and not migration-ready, the app helper only uploads to Supabase Storage, and this checkout has no Supabase CLI/configuration, migrations, or configured Supabase/database environment. The authoritative attempt, final-review, selection, and schedule contracts and a production owner are still missing, so this remains deferred and `needs-info`.
+Repository and CLI review on 2026-09-30 found an authenticated Supabase CLI session via `npx supabase`, but no `supabase/` project configuration or migrations in this checkout. The CLI lists the two projects above and reports both as `INACTIVE`; only project metadata was inspected, and no remote schema inspection was attempted. The local SQL draft has submissions, reviews, selection runs/candidates, and stage `opens_at`, but it does not define quiz attempts or an XP ledger, and does not fully specify the acceptance/review/access workflows. The application helper only uploads files to Supabase Storage. Production project access, the remaining authoritative contracts, and the production owner are still missing, so implementation remains deferred and `needs-info`. No remote project was modified or reactivated.

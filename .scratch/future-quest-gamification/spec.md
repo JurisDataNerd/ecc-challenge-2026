@@ -4,6 +4,8 @@ Status: ready-for-human
 
 Implementation: V1 prototype merged into `origin/main` in PR #1 (`a36e533`) on 2026-09-29. Post-merge browser verification was completed on 2026-09-30; see `verification.md`.
 
+ECC formally approved the V1 rules on 2026-09-30; see issue 01 for the recorded sign-off.
+
 ## Problem
 
 The current app presents learning activity and game progress in different places. The prototype should make each participant's bootcamp journey easier to follow while keeping stage access and XP tied to ECC's rules.
@@ -61,6 +63,5 @@ See the implementation issues in `issues/` for ownership and acceptance criteria
 
 ## Open items
 
-- ECC still needs to formally sign off on program rules; the accepted values are planning defaults until then.
 - L2 and L3 use the maps and quest content already present in `origin/main`; additional team-authored changes can be reviewed separately.
 - The production Supabase phase needs confirmed quiz, mission acceptance, final-review rubric, selection-result, and scheduled-opening data contracts.
