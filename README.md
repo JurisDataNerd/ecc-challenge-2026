@@ -25,7 +25,7 @@ Complete the short introduction before entering a stage. Return to the expeditio
 
 Copy `.env.example` to `.env.local` and supply the authorized Supabase URL and public anon/publishable key. Restart Vite after changing these values.
 
-Participant accounts use ECC invitations, email/password login, and password recovery. Public signup is disabled. Never put a service-role key in a `VITE_` variable. See [authentication setup](docs/authentication.md).
+Participant accounts use ECC invitations, email/password login, and password recovery. Public signup is disabled. Never put a service-role key in a `VITE_` variable. Authentication callback URLs are declared in `supabase/config.toml`.
 
 **Learning progress is simulated:** XP, mission review, and stage access are saved locally per visitor or authenticated account. Real authentication does not make these outcomes verified ECC results. Mentor/Admin workspaces are demo-only. Production learning integration remains pending.
 
@@ -50,9 +50,7 @@ bun run preview
 - `supabase/config.toml` — local authentication configuration
 - `scripts/` — asset utilities and focused verification checks
 - `tools/` — optional map editor
-- `docs/` — product reference, authentication, architecture, and asset licenses
-- `CONTEXT.md` — shared product terminology
 
-Local tickets, captures, recordings, downloads, and scratch notes are ignored by Git. Runtime assets and their [license documentation](docs/licenses/mixel/LICENSE.txt) remain tracked.
+Local documentation, agent instructions, tickets, captures, recordings, downloads, and scratch notes are ignored by Git. Runtime assets and their [license documentation](public/assets/mixel/LICENSE.txt) remain tracked.
 
-See the [product reference](docs/product-reference.md), [asset resources](docs/asset-resources.md), and [map editor guide](tools/README.md) for development context.
+See the [map editor guide](tools/README.md) for the optional development tool.

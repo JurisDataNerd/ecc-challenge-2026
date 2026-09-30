@@ -93,7 +93,9 @@ supabase/.temp/
 
 # Local planning, verification captures, and downloaded source packs
 .scratch/
-docs/screenshots/
+/docs/
+/AGENTS.md
+/CONTEXT.md
 /Pipoya RPG Tileset 32x32/
 /image.png
 /tes.md
