@@ -2,8 +2,6 @@
 
 A local 2D Map Editor with a **16x16 Grid**, tile sheet palette, **Solid Collision Overlay**, and **JSON save/load**.
 
-![Map Editor Preview](file:///home/fauzan/.gemini/antigravity-ide/brain/c5c324ac-e1de-455e-852d-89a48a7fa6bd/map_editor_preview.png)
-
 ## Quick Start
 
 Run the editor directly from your terminal:

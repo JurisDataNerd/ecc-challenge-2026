@@ -1,6 +1,6 @@
 // Staging-only verification. Creates a synthetic account without sending email; cleanup deletes it.
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
@@ -33,6 +33,7 @@ if (mode === 'verify-login') {
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || readFileSync(credentialPath, 'utf8').trim();
   const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
   if (mode === 'prepare') {
+    mkdirSync('.scratch/game-experience-overhaul/evidence', { recursive: true });
     assert.equal(existsSync(fixturePath), false, 'Clean up the existing synthetic fixture first');
     const email = `fq-experience-qa-${Date.now()}@example.invalid`;
     const { data, error } = await admin.auth.admin.generateLink({ type: 'invite', email, options: { redirectTo: 'http://localhost:5173/auth/accept-invite' } });

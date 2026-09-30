@@ -1,7 +1,7 @@
 // Run with FQ_BROWSER_CDP from agent-browser: bun scripts/check-journey-browser.mjs [demo|invite|recovery|production]
 // Uses the browser already opened by agent-browser. No separate browser or automation dependency.
 import assert from 'node:assert/strict';
-import { writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 const url = process.env.FQ_BROWSER_CDP;
 if (!url?.startsWith('ws://127.0.0.1:')) throw new Error('Supply the local agent-browser CDP URL in FQ_BROWSER_CDP');
 const socket = new WebSocket(url);
@@ -25,6 +25,7 @@ function send(method, params = {}, sessionId) {
   });
 }
 try {
+  await mkdir('.scratch/game-experience-overhaul/evidence', {recursive:true});
   const { targetInfos } = await send('Target.getTargets');
   const target = targetInfos.find(item => item.type === 'page' && item.url.startsWith('http://localhost:'));
   assert.ok(target);

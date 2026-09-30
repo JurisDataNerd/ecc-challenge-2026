@@ -90,3 +90,10 @@ Desktop.ini
 .vite/
 .turbo/
 supabase/.temp/
+
+# Local planning, verification captures, and downloaded source packs
+.scratch/
+docs/screenshots/
+/Pipoya RPG Tileset 32x32/
+/image.png
+/tes.md
