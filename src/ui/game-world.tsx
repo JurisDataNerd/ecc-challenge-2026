@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
 import type { ParticipantStage } from '../data/participantStages';
+import { movementInput } from '../game/terrain';
 import type { StageBoard } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
+export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause }: {
   stage: ParticipantStage;
   readOnly: boolean;
   paused: boolean;
   onOpenBoard: () => void;
+  onPause: () => void;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ interact: () => void } | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   const movementRef = useRef<Movement>({ x: 0, y: 0 });
   const keyboardMovementRef = useRef<Movement>({ x: 0, y: 0 });
   const pointerIdRef = useRef<number | null>(null);
@@ -21,6 +25,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
   const [gameReady, setGameReady] = useState(false);
 
   const updateMovement = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (pausedRef.current) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const dx = event.clientX - (bounds.left + bounds.width / 2);
     const dy = event.clientY - (bounds.top + bounds.height / 2);
@@ -48,10 +53,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
       ]);
       const parent = mountRef.current;
       if (disposed || !parent) return;
-      const scene = new Scene(stage, () => ({
-        x: movementRef.current.x + keyboardMovementRef.current.x,
-        y: movementRef.current.y + keyboardMovementRef.current.y,
-      }), setNearbyBoard, () => onOpenBoard(), () => setGameReady(true));
+      const scene = new Scene(stage, () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current), setNearbyBoard, () => { if (!pausedRef.current) onOpenBoard(); }, () => setGameReady(true));
       sceneRef.current = scene;
       game = new PhaserModule.Game({
         type: PhaserModule.AUTO,
@@ -63,6 +65,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
         scene,
         render: { antialias: false, roundPixels: true, pixelArt: true },
       });
+      if (import.meta.env.DEV) Object.assign(parent, { __game: game });
     }
 
     void createGame();
@@ -83,6 +86,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
     };
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
+      if (event.key === 'Escape' && !event.repeat && !pausedRef.current) { event.preventDefault(); onPause(); return; }
       if (paused || (target instanceof HTMLElement && target.closest('button,a,input,textarea,select,[contenteditable="true"]'))) return;
       const key = event.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
@@ -100,6 +104,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
     const clearMovement = () => {
       pressed.clear();
       syncMovement();
+      endMovement();
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
@@ -110,9 +115,12 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', clearMovement);
     };
-  }, [paused]);
+  }, [paused, onPause, endMovement]);
+
+  useEffect(() => { if (paused) endMovement(); }, [paused, endMovement]);
 
   const startMovement = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pausedRef.current) return;
     event.preventDefault();
     pointerIdRef.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -148,7 +156,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard }: {
       </div>
 
       {nearbyBoard && (
-        <button className="interact-button" onClick={() => sceneRef.current?.interact()}>
+        <button className="interact-button" disabled={paused} onClick={() => { if (!pausedRef.current) sceneRef.current?.interact(); }}>
           <span className="interact-key">E</span><span>Interaksi · {nearbyBoard.name}</span>
         </button>
       )}

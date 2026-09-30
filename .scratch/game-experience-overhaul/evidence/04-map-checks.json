@@ -1,0 +1,23 @@
+[
+  {
+    "boardReachable": true,
+    "ladderAndBridge": "not applicable",
+    "reachablePoints": 4020,
+    "spawnClear": true,
+    "stage": 1
+  },
+  {
+    "boardReachable": true,
+    "ladderAndBridge": "reachable",
+    "reachablePoints": 9782,
+    "spawnClear": true,
+    "stage": 2
+  },
+  {
+    "boardReachable": true,
+    "ladderAndBridge": "reachable",
+    "reachablePoints": 6855,
+    "spawnClear": true,
+    "stage": 3
+  }
+]

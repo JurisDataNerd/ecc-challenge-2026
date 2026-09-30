@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle, XCircle } from '@phosphor-icons/react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FutureBase, PathCode, Submission, UserRole } from '../../types';
@@ -7,9 +7,6 @@ import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, ty
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
 import { GameWorld } from '../../ui/game-world';
-import { GameEventBus } from '../../game/GameEventBus';
-
-const PhaserGame = lazy(() => import('../../game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
 import type { ParticipantDemoState } from '../../lib/progress';
 
@@ -37,6 +34,13 @@ export function ParticipantJourney({
   storageScope: string;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
+  const [pauseOpen, setPauseOpen] = useState(false);
+  const openPause = useCallback(() => setPauseOpen(true), []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !event.repeat && pauseOpen) setPauseOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pauseOpen]);
   const [boardOpen, setBoardOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
   const [activeMission, setActiveMission] = useState<(typeof STAGE_BOSS_MISSIONS)[number] | null>(null);
@@ -46,17 +50,6 @@ export function ParticipantJourney({
   const activeGate = getStageAccess(activeStage.ordinal, demo.access);
   const openBoard = useCallback(() => setBoardOpen(true), []);
 
-  useEffect(() => {
-    const stopQuiz = GameEventBus.on('TRIGGER_QUIZ', (quiz: (typeof STAGE_QUIZZES)[number]) => {
-      setReturnToBoard(false);
-      setActiveQuiz(quiz);
-    });
-    const stopMission = GameEventBus.on('TRIGGER_BOSS_MISSION', (mission: (typeof STAGE_BOSS_MISSIONS)[1]) => {
-      setReturnToBoard(false);
-      setActiveMission(mission);
-    });
-    return () => { stopQuiz(); stopMission(); };
-  }, []);
 
   const enterStage = (stage: ParticipantStage) => {
     const access = getStageAccess(stage.ordinal, demo.access);
@@ -111,16 +104,11 @@ export function ParticipantJourney({
           <section className="stage-screen">
             <header className="stage-toolbar">
               <button className="button button-quiet" onClick={() => toggleView('expedition')}><ArrowLeft size={17} /> Kembali ke Peta Ekspedisi</button>
-              <div className="stage-toolbar-title"><span>{activeStage.phase} · {activeStage.name}</span><small>{trackLabel(currentPath)} · Individual</small></div>
+              <div className="stage-toolbar-title"><button className="button button-quiet" onClick={openPause}>Jeda</button><span>{activeStage.phase} · {activeStage.name}</span><small>{trackLabel(currentPath)} · Individual</small></div>
               <button className="button button-quiet" onClick={() => toggleView('passport')}><BookOpenText size={17} /> Future Passport</button>
             </header>
-            {activeStage.ordinal === 1 ? (
-              <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} paused={boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} />
-            ) : (
-              <Suspense fallback={<div className="game-viewport"><div className="loading-note">Memuat permainan {activeStage.phase}…</div></div>}>
-                <PhaserGame key={activeStage.ordinal} currentPath={currentPath} currentStage={activeStage.ordinal} paused={boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} />
-              </Suspense>
-            )}
+            <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} paused={pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
+            {pauseOpen && <div className="journey-scrim"><section className="journey-dialog" role="dialog" aria-modal="true" aria-labelledby="pause-title"><h2 id="pause-title">Permainan dijeda</h2><p>Gerak dengan WASD atau tombol panah. Tekan E di dekat papan misi. Escape membuka atau menutup jeda.</p><p>Di ponsel, gunakan joystick dan tombol interaksi.</p><div className="dialog-actions"><button className="button button-gold" onClick={() => setPauseOpen(false)}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => { setPauseOpen(false); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></div></section></div>}
             <QuestBoard
               isOpen={boardOpen}
               stage={activeStage}
@@ -141,7 +129,7 @@ export function ParticipantJourney({
               readOnly={activeGate.readOnly}
               onClose={() => { setActiveQuiz(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
               onSubmit={markQuizAttempt}
-              onCorrect={quizId => GameEventBus.emit('ENEMY_DEFEATED', quizId)}
+              onCorrect={() => undefined}
             />
             <BossMissionModal
               key={activeMission?.id || 'no-mission'}

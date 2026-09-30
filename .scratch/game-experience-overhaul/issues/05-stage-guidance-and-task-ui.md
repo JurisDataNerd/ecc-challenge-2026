@@ -1,6 +1,6 @@
 # Stage guidance, quest interaction, and task UI
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 03, 04
 Spec: ../spec.md
 

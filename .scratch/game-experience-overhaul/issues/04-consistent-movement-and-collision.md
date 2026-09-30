@@ -1,6 +1,6 @@
 # Consistent movement, collision, and pause across maps
 
-Status: claimed
+Status: resolved
 Blocked by: none
 Spec: ../spec.md
 
@@ -16,3 +16,10 @@ Trace both GameWorld/ArenaScene and PhaserGame/WorldScene. Reuse the existing L1
 - Closing tasks reliably resumes the scene. Opening any task/pause stops all movement input.
 - Player proportions, camera, and object occlusion are coherent on each map.
 - Add focused runnable regressions for the pause/input bug and collision boundary behavior. Verify movement in browser, including actual touch input.
+
+
+## Answer
+
+Reused GameWorld/ArenaScene for all three maps. Shared movement normalizes combined input and blocks it centrally while paused. Keyboard, joystick, blur, and interaction use the same pause boundary. Escape opens/resumes pause. Removed unused WorldScene/PhaserGame combat and click-to-move code. Player scale, camera resize behavior, and depth sorting now match across scenes. Added fixed scenery footprints, water checks, foreground canopies, traversable ladder landings, and a rendered L3 bridge connecting the isolated island to the west bank.
+
+Evidence: `bun scripts/check-experience.ts` passes pause, normalization, slide, wall/tree/building/water/bridge boundary checks. `scripts/check-map-browser.js` checks actual map pixels and flood-fill reachability to all boards, the L2 upper ladder landing, and L3 west bank (04-map-checks.json). `scripts/check-game-browser.mjs` passed genuine CDP keyboard collision and touchscreen joystick/held-touch pause/resume checks in L1/L2/L3 (04-stage*-input.json). Production build passed. Stage/pause UI presentation is completed by ticket 05.
