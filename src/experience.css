@@ -114,3 +114,61 @@
   .experience-session { padding:6px 12px; font-size:10px; gap:8px; }
 }
 @media(prefers-reduced-motion:reduce) { .public-experience * { transition:none!important; scroll-behavior:auto!important; } }
+/* The maps carry the visual character; navigation stays quiet and readable. */
+.participant-shell { --quest-panel:#fff; --quest-ink:#163943; --quest-muted:#53696f; background:#f5f8f6; color:#163943; font-family:'Geist',sans-serif; }
+.participant-shell .participant-topbar { background:#f5f8f6; border-color:#ccdcd4; color:#163943; box-shadow:none; }
+.participant-shell .brand-mark { background:#446c4e; color:#fff; border:none; }
+.participant-shell :is(.brand-copy strong,.brand-copy span,.track-chip,.workspace-picker) { color:#163943; }
+.participant-shell :is(.onboarding-layout,.passport-card,.passport-large-card,.passport-stage-list,.rail-note,.access-controls) { border-color:#ccdcd4; box-shadow:none; background:#fff; color:#163943; }
+.participant-shell :is(.expedition-heading h1,.passport-page-heading h1,.onboarding-copy h1) { font:600 clamp(30px,3vw,44px)/1.15 'Geist',sans-serif; letter-spacing:-.025em; color:inherit; text-shadow:none; }
+.participant-shell :is(.expedition-heading p,.passport-page-heading p,.muted-copy,.rail-note p,.page-kicker,.eyebrow) { color:#53696f; letter-spacing:0; text-transform:none; }
+.participant-shell .onboarding-art { background-image:url('/assets/mixel/Sample%20640x640.PNG'); background-position:center; background-size:cover; }
+.participant-shell .onboarding-art-shade { background:linear-gradient(0deg,#163943ef,transparent 90%); }
+.participant-shell .onboarding-copy { color:#fff; }
+.participant-shell .onboarding-copy .eyebrow { color:#fff; }
+.participant-shell .onboarding-form { background:#fff; }
+.participant-shell :is(.onboarding-form h2,.form-field,.passport-track strong,.passport-track-name,.passport-title,.passport-xp strong,.passport-total strong,.passport-stage-row strong,.base-card h2) { color:#163943; }
+.participant-shell :is(.track-option,.form-field textarea,.gate-select select,.workspace-picker select) { color:#163943; border-color:#ccdcd4; background:#f5f8f6; }
+.participant-shell .track-option.selected { border-color:#446c4e; background:#edf3ea; box-shadow:inset 0 0 0 1px #446c4e; }
+.participant-shell :is(.track-option small,.onboarding-note,.passport-track-description,.passport-stage-row small,.base-card p) { color:#53696f; }
+.participant-shell .route-panel { background:transparent; border:0; padding:0; box-shadow:none; }
+.participant-shell :is(.route-panel-top,.route-summary,.passport-track span,.passport-xp span,.passport-total span) { color:#53696f; }
+.participant-shell .stage-card { min-height:320px; border-radius:8px; border-color:#ccdcd4; box-shadow:none; }
+.participant-shell .stage-card:hover { transform:none; border-color:#446c4e; }
+.participant-shell .stage-card-body strong { font:600 25px/1.2 'Geist',sans-serif; }
+.participant-shell :is(.stage-card-body small,.stage-card-action) { font-size:13px; }
+.participant-shell .button-quiet { color:#163943; border-color:#ccdcd4; background:#fff; }
+.participant-shell .button-gold { background:#446c4e; border-color:#446c4e; color:#fff; }
+.participant-shell .passport-open { color:#446c4e; }
+.participant-shell .xp-track { background:#e2eae4; }
+.participant-shell .xp-track>span { background:#446c4e; }
+.participant-shell :is(.passport-track,.passport-xp,.passport-stage-row,.route-summary) { border-color:#ccdcd4; }
+.participant-shell .demo-pill { color:#53696f; background:#edf3ea; border-color:#ccdcd4; letter-spacing:0; }
+.participant-shell .access-controls { margin-top:24px; }
+@media(max-width:700px) { .participant-shell .stage-card { min-height:154px; } .participant-shell .stage-card-body strong { font-size:22px; } }
+.participant-shell { --quest-bg:#f5f8f6; --quest-cream:#163943; --quest-gold:#446c4e; --quest-line:#ccdcd4; }
+.participant-shell .track-option strong { color:#163943; }
+.participant-shell .track-option-icon { background:transparent; border:0; }
+.participant-shell .track-chip { background:#edf3ea; border-color:#ccdcd4; }
+.participant-shell :is(.onboarding-form h2,.passport-track strong,.passport-track-name,.passport-total strong,.passport-xp strong,.base-card h2) { font-family:'Geist',sans-serif; }
+.participant-shell :is(.brand-copy span,.eyebrow,.page-kicker,.passport-title,.passport-track>span,.passport-xp>span,.passport-total>span,.route-panel-top,.route-summary,.demo-pill) { font-family:'Geist',sans-serif; letter-spacing:0; text-transform:none; font-size:12px; }
+.participant-shell .button-gold { box-shadow:none; border-radius:4px; }
+.participant-shell .button-gold:hover:not(:disabled) { background:#36553e; transform:none; }
+.participant-shell .button-quiet:hover { background:#edf3ea; color:#163943; border-color:#446c4e; }
+.participant-shell .base-milestone :is(strong,small) { color:#53696f; }
+.participant-shell .base-layer { background:#edf3ea; border-color:#ccdcd4; color:#53696f; box-shadow:none; }
+.participant-shell .milestone-complete .base-layer { background:#446c4e; color:white; }
+.participant-shell .access-controls summary { color:#53696f; }
+.participant-shell .gate-row { border-color:#ccdcd4; color:#163943; }
+.participant-shell .gate-row legend,.participant-shell .access-controls p { color:#53696f; }
+.participant-shell .passport-title { color:#163943; }
+.participant-shell :is(.passport-title,.expedition-heading,.onboarding-sequence) { border-color:#ccdcd4; }
+.participant-shell .onboarding-sequence { font:500 12px/1.5 'Geist',sans-serif; color:#fff; text-transform:none; }
+.participant-shell .onboarding-sequence .sequence-active { color:#fff; }
+.participant-shell .next-step { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px 0 24px; }
+.participant-shell .next-step strong { font-size:20px; font-weight:600; }
+.participant-shell .next-step p { margin:6px 0 0; color:#53696f; font-size:14px; line-height:1.6; }
+.participant-shell .future-base-summary { padding:20px 0; border-top:1px solid #ccdcd4; }
+.participant-shell .future-base-summary h2 { margin:0 0 10px; font:600 20px 'Geist',sans-serif; }
+.participant-shell .future-base-summary p { color:#53696f; font-size:14px; margin:8px 0 18px; }
+@media(max-width:700px) { .participant-shell .next-step { align-items:flex-start; flex-direction:column; gap:12px; } }

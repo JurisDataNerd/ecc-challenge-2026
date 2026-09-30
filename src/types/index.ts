@@ -75,6 +75,7 @@ export interface BossMission {
 }
 
 export interface SubmissionFile {
+  storageKey?: string;
   id: string;
   name: string;
   size: number;

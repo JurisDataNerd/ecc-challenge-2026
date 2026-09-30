@@ -11,27 +11,7 @@ import { GameEventBus } from '../../game/GameEventBus';
 
 const PhaserGame = lazy(() => import('../../game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
-export type ParticipantDemoState = {
-  screen: 'onboarding' | 'expedition' | 'stage' | 'passport';
-  onboarded: boolean;
-  futureBase: FutureBase | null;
-  currentStage: StageOrdinal;
-  access: DemoAccessState;
-  quizAttempts: string[];
-  submissions: Record<number, Submission>;
-  xpAwards: Record<string, number>;
-};
-
-export const INITIAL_PARTICIPANT_DEMO: ParticipantDemoState = {
-  screen: 'onboarding',
-  onboarded: false,
-  futureBase: null,
-  currentStage: 1,
-  access: DEFAULT_DEMO_ACCESS,
-  quizAttempts: [],
-  submissions: {},
-  xpAwards: {},
-};
+import type { ParticipantDemoState } from '../../lib/progress';
 
 export function ParticipantJourney({
   currentPath,
@@ -42,6 +22,8 @@ export function ParticipantJourney({
   onSelectStage,
   onRoleChange,
   allowStaffDemo = true,
+  onNavigate,
+  storageScope,
 }: {
   currentPath: PathCode;
   currentRole: UserRole;
@@ -51,6 +33,8 @@ export function ParticipantJourney({
   onSelectStage: (stage: StageOrdinal) => void;
   onRoleChange: (role: UserRole) => void;
   allowStaffDemo?: boolean;
+  onNavigate: (screen: ParticipantDemoState['screen']) => void;
+  storageScope: string;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
   const [boardOpen, setBoardOpen] = useState(false);
@@ -104,7 +88,7 @@ export function ParticipantJourney({
     },
   }));
 
-  const toggleView = (screen: ParticipantDemoState['screen']) => setDemo(current => ({ ...current, screen }));
+  const toggleView = (screen: ParticipantDemoState['screen']) => onNavigate(screen);
 
   return (
     <div className="participant-shell">
@@ -162,6 +146,7 @@ export function ParticipantJourney({
             <BossMissionModal
               key={activeMission?.id || 'no-mission'}
               mission={activeMission}
+              storageScope={storageScope}
               currentSubmission={demo.submissions[activeStage.ordinal]}
               currentPath={currentPath}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
@@ -205,15 +190,15 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
     <section className="onboarding-layout">
       <div className="onboarding-art">
         <div className="onboarding-art-shade" />
-        <div className="onboarding-copy"><span className="eyebrow">CHECKPOINT 00 · SEBELUM BOOTCAMP</span>
-          <h1>Mulai dari<br /><em>Future Base</em></h1>
-          <p>Susun arah perjalananmu. Ini checkpoint awal yang terpisah dari tiga stage bootcamp.</p>
+        <div className="onboarding-copy"><span className="eyebrow">Future Base · sebelum bootcamp</span>
+          <h1>Siapkan perjalananmu.</h1>
+          <p>Pilih fokus belajar dan tuliskan tujuanmu. Setelah ini, kamu bisa menjelajahi ketiga stage.</p>
           <div className="onboarding-sequence"><span className="sequence-active">01 Future Base</span><i /><span>02 L1 Discover</span><i /><span>03 L2 Build</span><i /><span>04 L3 Pitch</span></div>
         </div>
-        <div className="onboarding-stamp"><Compass size={24} /><span>SOLO<br />EXPEDITION</span></div>
+        
       </div>
       <form className="onboarding-form" onSubmit={event => { event.preventDefault(); if (!direction.trim() || !target90d.trim()) return; onContinue(path, { direction: direction.trim(), target90d: target90d.trim(), skills: [], support: '' }); }}>
-        <div className="form-overline"><span>01 / 02</span><span>ONBOARDING DEMO</span></div>
+        
         <h2>Pilih jalur perjalanan</h2>
         <p className="muted-copy">Tentukan fokusmu, lalu catat satu komitmen untuk 90 hari ke depan.</p>
         <div className="track-options" role="radiogroup" aria-label="Pilih track program">
@@ -243,12 +228,14 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
 }) {
   const stage = PARTICIPANT_STAGES.find(item => item.ordinal === selectedPreview) || PARTICIPANT_STAGES[0];
   const access = getStageAccess(stage.ordinal, demo.access);
+  const next = PARTICIPANT_STAGES.find(item => getStageAccess(item.ordinal, demo.access).unlocked && !isStageComplete(item, demo)) || PARTICIPANT_STAGES[0];
   return (
     <div className="expedition-layout">
       <section className="expedition-content">
         <div className="page-kicker"><MapTrifold size={16} /> SIAP IMPACT 2026 <span>·</span> DEMO DATA</div>
-        <div className="expedition-heading"><div><h1>Peta Ekspedisi</h1><p>Pilih satu stage untuk masuk ke map terpisahnya. Kembali ke sini untuk berpindah stage.</p></div><button className="button button-quiet" onClick={onPassport}><BookOpenText size={17} /> Future Passport</button></div>
-        <div className="route-panel" style={{ backgroundImage: "linear-gradient(90deg,rgba(6,17,28,.97),rgba(6,17,28,.72)),url('/assets/dungeon/map_stage1_village.png')" }}>
+        <div className="expedition-heading"><div><h1>Peta Ekspedisi</h1><p>Mulai dari Discover atau lanjutkan stage yang ingin kamu kerjakan. Progresmu tersimpan di browser ini.</p></div><button className="button button-quiet" onClick={onPassport}><BookOpenText size={17} /> Future Passport</button></div>
+        <div className="next-step"><div><strong>{demo.quizAttempts.length || Object.keys(demo.submissions).length ? "Lanjutkan perjalanan" : "Siap mulai?"}</strong><p>{next.phase} {next.name}: {next.description}</p></div><button className="button button-gold" onClick={() => onEnter(next)}>Masuk {next.phase} <ArrowRight size={17} /></button></div>
+        <div className="route-panel">
           <div className="route-panel-top"><span>BOOTCAMP · 3 STAGE</span><span className="demo-pill">STATUS SIMULASI</span></div>
           <div className="stage-route" aria-label="Tiga stage bootcamp">
             {PARTICIPANT_STAGES.map((item, index) => {
@@ -262,12 +249,12 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
                   <span className="stage-card-image" style={{ backgroundImage: `linear-gradient(180deg,rgba(3,10,18,.02),rgba(3,10,18,.92)),url('${item.mapPath}')` }} />
                   <span className="stage-card-top"><span>{item.phase}</span>{itemAccess.unlocked ? <span className="stage-lock-open">OPEN</span> : <LockKey size={16} />}</span>
                   <span className="stage-card-body"><strong>{item.name}</strong><small>{item.description}</small><span className={`stage-status ${itemAccess.unlocked ? 'status-open' : ''}`}>{complete ? <Check size={13} /> : itemAccess.unlocked ? <Compass size={13} /> : <LockKey size={13} />}{status}</span></span>
-                  <span className="stage-card-action">{itemAccess.unlocked ? 'Masuk ke scene' : 'Lihat status'} <ArrowRight size={14} /></span>
+                  <span className="stage-card-action">{itemAccess.unlocked ? 'Masuk stage' : 'Lihat status'} <ArrowRight size={14} /></span>
                 </button>
               </div>;
             })}
           </div>
-          <div className="route-summary"><span className="route-summary-dot" />{stage.phase} · {stage.name}<span>{access.unlocked ? (access.readOnly ? 'Akses hanya baca' : 'Scene siap dibuka') : lockMessage(access.reason)}</span></div>
+          <div className="route-summary"><span className="route-summary-dot" />{stage.phase} · {stage.name}<span>{access.unlocked ? (access.readOnly ? 'Akses hanya baca' : 'Siap dijelajahi') : lockMessage(access.reason)}</span></div>
         </div>
 
         <AccessControls access={demo.access} onUpdateGate={onUpdateGate} />
@@ -301,6 +288,7 @@ function PassportPage({ currentPath, demo, totalXp, onBack, onUpdateGate }: {
   const milestones = PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo));
   return <div className="passport-page">
     <div className="passport-page-heading"><div><span className="page-kicker"><BookOpenText size={16} /> INDIVIDUAL PROGRESS · DEMO</span><h1>Future Passport</h1><p>Track, XP nonspendable, dan milestone stage milikmu.</p></div><button className="button button-quiet" onClick={onBack}><ArrowLeft size={17} /> Kembali ke Peta</button></div>
+    {demo.futureBase && <section className="future-base-summary"><h2>Tujuan perjalananmu</h2><p>{demo.futureBase.direction}</p><strong>Target 90 hari</strong><p>{demo.futureBase.target90d}</p></section>}
     <div className="passport-page-grid">
       <section className="passport-large-card"><span className="eyebrow">PROGRAM TRACK</span><strong className="passport-track-name">{trackLabel(currentPath)}</strong><span className="passport-track-description">{OFFICIAL_PATHS[currentPath].subtitle}</span><div className="passport-total"><span>XP DEMO · NONSPENDABLE</span><strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong><div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div><small>Bar ilustrasi dari 0–100 XP. XP tidak mengubah hasil seleksi atau akses stage.</small></div></section>
       <section className="passport-large-card base-card"><span className="eyebrow">PERSONAL BASE · MILESTONE</span><h2>Bangun dari hasil kerjamu</h2><p>Satu milestone tampil untuk setiap stage yang selesai.</p><BaseMilestones milestones={milestones} large /></section>

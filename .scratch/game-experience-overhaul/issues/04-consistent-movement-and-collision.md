@@ -1,6 +1,6 @@
 # Consistent movement, collision, and pause across maps
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: none
 Spec: ../spec.md
 

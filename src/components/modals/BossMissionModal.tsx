@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileText, LinkSimple, UploadSimple, XCircle } from '@phosphor-icons/react';
 import type { BossMission, PathCode, Submission, SubmissionFile } from '../../types';
+import { isEvidenceLink } from '../../lib/progress';
+import { removeFile, storeFile } from '../../lib/local-files';
 import { trackLabel } from '../../data/participantStages';
 
 export function BossMissionModal({
   mission,
+  storageScope,
   currentSubmission,
   currentPath = 'professional',
   trackFocus,
@@ -13,6 +16,7 @@ export function BossMissionModal({
   onSubmitMission,
 }: {
   mission: BossMission | null;
+  storageScope: string;
   currentSubmission?: Submission;
   currentPath?: PathCode;
   trackFocus: string;
@@ -25,6 +29,14 @@ export function BossMissionModal({
   const [evidenceLink, setEvidenceLink] = useState(currentSubmission?.evidenceLinks?.[0] || '');
   const [files, setFiles] = useState<SubmissionFile[]>(currentSubmission?.files || []);
   const [error, setError] = useState('');
+  const [storing, setStoring] = useState(false);
+  const temporaryFiles = useRef<SubmissionFile[]>([]);
+  const removedFiles = useRef<SubmissionFile[]>([]);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; temporaryFiles.current.forEach(file => { void removeFile(file).catch(() => undefined); }); };
+  }, []);
   if (!mission) return null;
 
   const locked = readOnly || ['submitted', 'in_review', 'reviewed'].includes(currentSubmission?.status || '');
@@ -32,26 +44,35 @@ export function BossMissionModal({
   const evidenceCriterion = mission.rubricCriteria.find(criterion => criterion.key === 'evidence_quality');
   const evidenceScore = evidenceCriterion ? currentSubmission?.review?.scores[evidenceCriterion.key] || 0 : 0;
   const evidenceBonus = Boolean(evidenceCriterion && evidenceScore >= evidenceCriterion.maxScore * 0.8);
-  const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = [...(event.target.files || [])];
     event.target.value = '';
     if (files.length + selected.length > mission.maxFiles) return setError(`Maksimal ${mission.maxFiles} berkas.`);
     const valid = selected.filter(file => file.size <= 20 * 1024 * 1024 && mission.allowedFormats.includes(file.type));
     if (valid.length !== selected.length) return setError('Gunakan format yang diterima, maksimal 20 MB per berkas.');
     setError('');
-    setFiles(current => [...current, ...valid.map((file, index) => ({
-      id: `${Date.now()}-${index}`, name: file.name, size: file.size, type: file.type, url: URL.createObjectURL(file),
-    }))]);
+    setStoring(true);
+    const added: SubmissionFile[] = [];
+    try {
+      for (const file of valid) added.push(await storeFile(storageScope, file));
+      if (!mounted.current) { added.forEach(file => { void removeFile(file); }); return; }
+      temporaryFiles.current.push(...added);
+      setFiles(current => [...current, ...added]);
+    } catch {
+      await Promise.allSettled(added.map(removeFile));
+      if (mounted.current) setError('Bukti belum tersimpan. Periksa ruang penyimpanan browser lalu coba lagi.');
+    } finally { if (mounted.current) setStoring(false); }
   };
 
   const save = (status: Submission['status']) => {
-    if (status === 'submitted' && (!summary.trim() || !reflection.trim() || (!files.length && !evidenceLink.trim()))) {
+    if (status === 'submitted' && (!summary.trim() || !reflection.trim() || (!files.some(file => file.url) && !evidenceLink.trim()))) {
       setError('Lengkapi ringkasan, refleksi, dan lampirkan satu bukti sebelum mengirim.');
       return;
     }
-    if (status === 'submitted' && evidenceLink.trim()) {
+    if (storing) return;
+    if (evidenceLink.trim()) {
       try {
-        if (!['http:', 'https:'].includes(new URL(evidenceLink.trim()).protocol)) throw new Error();
+        if (!isEvidenceLink(evidenceLink.trim())) throw new Error();
       } catch {
         setError('Tautan bukti harus menggunakan alamat http:// atau https://.');
         return;
@@ -70,6 +91,8 @@ export function BossMissionModal({
       submittedAt: status === 'submitted' ? new Date().toISOString() : currentSubmission?.submittedAt,
       review: currentSubmission?.review,
     });
+    temporaryFiles.current = [];
+    removedFiles.current.forEach(file => { void removeFile(file).catch(() => undefined); });
     onClose();
   };
 
@@ -94,7 +117,7 @@ export function BossMissionModal({
           <div><strong>Ringkasan temuan</strong><p>{currentSubmission.summary || 'Belum ada ringkasan.'}</p></div>
           <div><strong>Refleksi pembelajaran</strong><p>{currentSubmission.reflection || 'Belum ada refleksi.'}</p></div>
           <div><strong>Bukti</strong><ul>
-            {currentSubmission.files.map(file => <li key={file.id}><a href={file.url} target="_blank" rel="noreferrer">{file.name}</a></li>)}
+            {currentSubmission.files.map(file => <li key={file.id}>{file.url ? <a href={file.url} target="_blank" rel="noreferrer">{file.name}</a> : <span>{file.name} ? berkas tidak tersedia di browser ini</span>}</li>)}
             {currentSubmission.evidenceLinks.map((link, index) => <li key={link}><a href={link} target="_blank" rel="noreferrer">Tautan bukti {index + 1}</a></li>)}
             {!currentSubmission.files.length && !currentSubmission.evidenceLinks.length && <li>Belum ada bukti yang dilampirkan.</li>}
           </ul></div>
@@ -104,17 +127,18 @@ export function BossMissionModal({
           <label>Ringkasan temuan<textarea value={summary} onChange={event => setSummary(event.target.value)} rows={3} placeholder="Apa yang kamu temukan?" /></label>
           <label>Refleksi pembelajaran<textarea value={reflection} onChange={event => setReflection(event.target.value)} rows={3} placeholder="Apa yang berubah dari asumsi awalmu?" /></label>
           <label>Tautan bukti (opsional jika unggah file)<span className="input-with-icon"><LinkSimple size={17} /><input type="url" value={evidenceLink} onChange={event => setEvidenceLink(event.target.value)} placeholder="https://…" /></span></label>
-          <label className="file-drop"><UploadSimple size={18} /><span>Tambah bukti · maks {mission.maxFiles} berkas, 20 MB per file</span><input type="file" multiple accept={mission.allowedFormats.join(',')} onChange={handleFiles} /></label>
-          {!!files.length && <div className="file-list">{files.map(file => <div key={file.id}><FileText size={16} /><span>{file.name}</span><button type="button" onClick={() => { URL.revokeObjectURL(file.url); setFiles(current => current.filter(item => item.id !== file.id)); }} aria-label={`Hapus ${file.name}`}>×</button></div>)}</div>}
+          <label className="file-drop"><UploadSimple size={18} /><span>Tambah bukti · maks {mission.maxFiles} berkas, 20 MB per file</span><input type="file" multiple accept={mission.allowedFormats.join(',')} onChange={handleFiles} disabled={storing} /></label>
+          {!!files.length && <div className="file-list">{files.map(file => <div key={file.id}><FileText size={16} /><span>{file.name}{!file.url && " ? unggah ulang"}</span><button type="button" onClick={() => { removedFiles.current.push(file); setFiles(current => current.filter(item => item.id !== file.id)); }} aria-label={`Hapus ${file.name}`}>×</button></div>)}</div>}
         </div>}
+        {storing && <p role="status">Menyimpan bukti di browser?</p>}
         {error && <p className="form-error" role="alert">{error}</p>}
         <footer className="dialog-actions">
           <span className="demo-note">{readOnly ? 'Mode lihat · tidak ada XP baru · DEMO' : '20 XP setelah kiriman pertama diterima · DEMO'}</span>
           <div>
             <button className="button button-quiet" onClick={onClose}>Kembali</button>
             {!locked && <>
-              <button className="button button-quiet" onClick={() => save('draft')}>Simpan draft</button>
-              <button className="button button-gold" onClick={() => save('submitted')}>{needsRevision ? 'Kirim revisi' : 'Kirim ke Mentor'}</button>
+              <button className="button button-quiet" disabled={storing} onClick={() => save('draft')}>Simpan draft</button>
+              <button className="button button-gold" disabled={storing} onClick={() => save('submitted')}>{needsRevision ? 'Kirim revisi' : 'Kirim ke Mentor'}</button>
             </>}
           </div>
         </footer>
