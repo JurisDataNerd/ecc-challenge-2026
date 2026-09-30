@@ -21,6 +21,7 @@
   if(!queue.some(p=>Math.hypot(p.x-stage.board.x,p.y-stage.board.y)<90))throw new Error(`L${stage.ordinal} board is unreachable`);
   if(stage.ordinal===2 && !seen.has('928,880'))throw new Error('L2 ladder cannot reach its upper landing');
   if(stage.ordinal===3 && !seen.has('672,1072'))throw new Error('L3 bridge cannot reach the west bank');
+  if(stage.ordinal===3 && (!seen.has('1136,192') || !seen.has('1552,192')))throw new Error('L3 original rope bridge cannot reach both banks');
   result.push({stage:stage.ordinal,spawnClear:true,boardReachable:true,reachablePoints:queue.length,ladderAndBridge:stage.ordinal===1?'not applicable':'reachable'});
  }
  return result;

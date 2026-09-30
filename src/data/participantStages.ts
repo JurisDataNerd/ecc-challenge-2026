@@ -14,6 +14,7 @@ export interface ParticipantStage {
   board: { x: number; y: number };
   accent: string;
   boardName: string;
+  boardHint: string;
 }
 
 export const PARTICIPANT_STAGES: ParticipantStage[] = [
@@ -29,6 +30,7 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     board: { x: 820, y: 866 },
     accent: '#e9b95b',
     boardName: 'Jurnal Lapangan',
+    boardHint: 'di atas tangga reruntuhan',
   },
   {
     ordinal: 2,
@@ -42,6 +44,7 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     board: { x: 828, y: 1688 },
     accent: '#61c6b1',
     boardName: 'Bengkel Prototipe',
+    boardHint: 'di depan rumah, dekat peti',
   },
   {
     ordinal: 3,
@@ -51,10 +54,11 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     mapPath: '/assets/dungeon/map_stage3_interior.png',
     mapScale: 2,
     worldSize: 2048,
-    spawn: { x: 1220, y: 1120 },
-    board: { x: 1220, y: 1040 },
+    spawn: { x: 1856, y: 816 },
+    board: { x: 1772, y: 732 },
     accent: '#d6a8ea',
     boardName: 'Paviliun Pitch',
+    boardHint: 'di halaman rumah beratap biru',
   },
 ];
 

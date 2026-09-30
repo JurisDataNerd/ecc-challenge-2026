@@ -99,8 +99,9 @@ export class ArenaScene extends Phaser.Scene {
     const { x, y } = this.stage.spawn;
     this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(54, 34).setAlpha(0.8).setDepth(y - 1);
     this.player = this.add.sprite(x, y, 'idle-Front').setOrigin(0.5, 1).setScale(2).setDepth(y).play('idle-Front');
-    const updateCamera = () => this.cameras.main.setZoom(this.scale.width < 768 ? 0.8 : 1);
-    this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12);
+    const updateCamera = () => this.cameras.main.setZoom(Math.max(this.scale.width < 768 || this.scale.height < 480 ? 0.8 : 1, this.scale.width/this.stage.worldSize, this.scale.height/this.stage.worldSize));
+    this.cameras.main.roundPixels = true;
+    this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12, 0, 32);
     updateCamera();
     this.scale.on('resize', updateCamera);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off('resize', updateCamera));
@@ -109,12 +110,16 @@ export class ArenaScene extends Phaser.Scene {
   private drawBridge() {
     if (this.stage.ordinal !== 3) return;
     const [x,y,w,h]=L3_BRIDGE, scale=this.stage.mapScale;
-    const art=this.add.graphics().setDepth(1);
-    art.fillStyle(0x543c28).fillRect(x*scale,y*scale,w*scale,h*scale);
-    for (let plank=0;plank<w;plank+=6) {
-      art.fillStyle(plank%12?0xbda165:0xa48a53).fillRect((x+plank)*scale,(y+2)*scale,5*scale,(h-4)*scale);
-    }
-    art.fillStyle(0x725432).fillRect(x*scale,y*scale,w*scale,2*scale).fillRect(x*scale,(y+h-2)*scale,w*scale,2*scale);
+    // Reuse this map's rope bridge, with its water/grass background made transparent.
+    const texture=this.textures.createCanvas('island-bridge',w,72);
+    if (!texture) return;
+    const ctx=texture.context;
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(this.textures.get('world-map').getSourceImage() as HTMLImageElement,584,32,176,96,0,0,w,72);
+    const pixels=ctx.getImageData(0,0,w,72);
+    for(let i=0;i<pixels.data.length;i+=4){const [r,g,b]=pixels.data.subarray(i,i+3);if(b>r+25 || g>r+8)pixels.data[i+3]=0;}
+    ctx.putImageData(pixels,0,0);texture.refresh();
+    this.add.image((x+w/2)*scale,(y+h/2)*scale,'island-bridge').setScale(scale).setDepth(1);
   }
 
   private drawCanopies(source: HTMLImageElement) {
@@ -128,7 +133,14 @@ export class ArenaScene extends Phaser.Scene {
       const ctx=texture.context;
       // Crop the baked canopy into a foreground ellipse. The transparent corners keep paths visible.
       ctx.beginPath();ctx.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);ctx.clip();
-      ctx.drawImage(source,x,y,w,h,0,0,w,h);texture.refresh();
+      ctx.drawImage(source,x,y,w,h,0,0,w,h);
+      // Clear only background connected to the crop edge; keep the enclosed leaf pixels intact.
+      const pixels=ctx.getImageData(0,0,w,h), seen=new Uint8Array(w*h), queue:number[]=[];
+      const ground=new Set(this.stage.ordinal===1?[0x9ab037,0x7d9630,0xc69c6d]:[0x95bb1f,0x8fb31e]);
+      const visit=(i:number)=>{if(i<0||i>=w*h||seen[i])return;seen[i]=1;const p=i*4,d=pixels.data;if(!d[p+3]||ground.has((d[p]<<16)|(d[p+1]<<8)|d[p+2])){d[p+3]=0;queue.push(i);}};
+      for(let i=0;i<w*h;i++)if(!pixels.data[i*4+3])visit(i);
+      for(let i=0;i<queue.length;i++){const p=queue[i];if(p%w)visit(p-1);if(p%w<w-1)visit(p+1);visit(p-w);visit(p+w);}
+      ctx.putImageData(pixels,0,0);texture.refresh();
       this.add.image((x+w/2)*scale,(y+h/2)*scale,`canopy-${index}`).setScale(scale).setDepth(baseY*scale);
     });
   }
@@ -146,11 +158,11 @@ export class ArenaScene extends Phaser.Scene {
     const art = this.add.graphics().setDepth(depth);
     art.fillStyle(0x392e27, 0.28).fillEllipse(x, y + 32, 65, 19);
     art.fillStyle(0x6c4933).fillRect(x - 4, y + 8, 8, 38);
-    art.fillStyle(0xf3c45e).fillRect(x - 36, y - 23, 72, 38);
-    art.lineStyle(4, 0x392e27).strokeRect(x - 36, y - 23, 72, 38);
-    art.fillStyle(0x4f8a62).fillRect(x - 36, y - 23, 72, 7);
-    this.add.text(x, y - 2, `L${this.stage.ordinal} JOURNAL`, {
-      fontFamily: 'Arial, sans-serif', fontSize: '10px', fontStyle: 'bold', color: '#17324d',
+    art.fillStyle(0xf3c45e).fillRect(x - 50, y - 25, 100, 42);
+    art.lineStyle(4, 0x392e27).strokeRect(x - 50, y - 25, 100, 42);
+    art.fillStyle(Phaser.Display.Color.HexStringToColor(this.stage.accent).color).fillRect(x - 50, y - 25, 100, 7);
+    this.add.text(x, y - 2, `${this.stage.phase} ${this.stage.name.toUpperCase()}`, {
+      fontFamily: '"Pixelify Sans", monospace', fontSize: '14px', fontStyle: 'bold', color: '#17324d',
     }).setOrigin(0.5).setDepth(depth + 1);
   }
 }

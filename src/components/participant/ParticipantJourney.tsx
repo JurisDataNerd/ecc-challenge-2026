@@ -117,13 +117,13 @@ export function ParticipantJourney({
             <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} objective={objective} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
-              <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada dekat titik awal. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
+              <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada {activeStage.boardHint}. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
               <ControlsGuide />
               <footer className="dialog-actions"><span className="demo-note">Progres belajar disimpan sebagai simulasi di browser ini.</span><button className="button button-gold" onClick={beginStage}>Mulai menjelajah</button></footer>
             </JourneyDialog>}
             {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={() => setPauseOpen(false)}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">Permainan dijeda</h2><p>{objective}</p><ControlsGuide />
-              <p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName}. Kamu bisa kembali ke peta kapan pun untuk berpindah stage.</p>
+              <p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName} {activeStage.boardHint}. Kamu bisa kembali ke peta kapan pun untuk berpindah stage.</p>
               <footer className="pause-actions"><button className="button button-gold" onClick={() => setPauseOpen(false)}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => { setPauseOpen(false); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
             </JourneyDialog>}
             <QuestBoard

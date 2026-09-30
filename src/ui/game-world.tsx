@@ -138,7 +138,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objec
     <section className="game-viewport" tabIndex={0} aria-label={`${stage.phase} ${stage.name} scene`}>
       <div className="phaser-mount" ref={mountRef} aria-label={`${stage.name} game map`} />
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
-<div className="world-objective"><span>{readOnly ? "Mode lihat" : "Langkah berikutnya"}</span><strong>{objective}</strong><small>Tugas tersedia di {stage.boardName}</small></div>
+<div className="world-objective"><span>{readOnly ? "Mode lihat" : "Langkah berikutnya"}</span><strong>{objective}</strong><small>{stage.boardName} {stage.boardHint}</small></div>
 
       <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Gunakan tombol panah kembali di bagian atas untuk memilih stage.</p></div>
       <div

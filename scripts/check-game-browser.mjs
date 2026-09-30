@@ -36,6 +36,17 @@ try {
   await evalPage(`document.querySelector(".stage-intro-dialog .button-gold")?.click();true`);
   await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
   const stage = await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].stage.ordinal`);
+  await send('Emulation.setDeviceMetricsOverride',{width:2560,height:1080,deviceScaleFactor:1,mobile:false},sessionId);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const cameraFit=await evalPage(`(()=>{const s=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0],c=s.cameras.main;return {width:c.width,height:c.height,zoom:c.zoom,world:s.stage.worldSize}})()`);
+  assert.ok(cameraFit.world*cameraFit.zoom>=cameraFit.width && cameraFit.world*cameraFit.zoom>=cameraFit.height,'Wide screens must not expose blank world gutters');
+  if(stage===3){
+    await evalPage(`document.activeElement?.blur();document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.setPosition(1136,192);true`);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+    await evalPage('new Promise(resolve=>setTimeout(resolve,2400))');
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+    assert.ok(await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.x>1540`),'Keyboard movement must cross the original rope bridge despite gaps between planks');
+  }
   const wall = { 1: { x:780, y:1000, minY:980 }, 2: { x:600, y:1700, minY:1684 }, 3: { x:1088, y:1256, minY:1232 } }[stage];
   await evalPage(`document.activeElement?.blur();document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.setPosition(${wall.x},${wall.y});true`);
   await send('Input.dispatchKeyEvent', { type:'keyDown', key:'w', code:'KeyW', windowsVirtualKeyCode:87 }, sessionId);
@@ -107,7 +118,7 @@ try {
   assert.deepEqual(await position(),beforePortraitInput,'Portrait guidance must block game movement');
   const portraitScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
   await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-portrait.png`,Buffer.from(portraitScreenshot.data,'base64'));
-  console.log(JSON.stringify({ stage, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, boardLayout, portrait, result: 'Keyboard collision, actual touch interaction, modal input suppression, pause/resume, and portrait passed' }, null, 2));
+  console.log(JSON.stringify({ stage, cameraFit, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, boardLayout, portrait, result: 'Wide camera fit, keyboard collision, actual touch interaction, modal input suppression, pause/resume, and portrait passed' }, null, 2));
   await send('Emulation.setTouchEmulationEnabled', { enabled: false }, sessionId);
   await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId);
 } finally { socket.close(); }

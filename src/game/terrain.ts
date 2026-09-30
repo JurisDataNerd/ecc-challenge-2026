@@ -1,10 +1,11 @@
-import type { StageOrdinal } from '../data/participantStages';
+import { PARTICIPANT_STAGES, type StageOrdinal } from '../data/participantStages';
 export type Rect = readonly [x: number, y: number, width: number, height: number];
 export type Point = { x: number; y: number };
 // Source-image pixels, traced against the fixed maps. Tree coordinates are visible trunk bases.
 // ponytail: fixed scenery footprints fit these baked maps; use tile/object layers when maps become editable.
 export const TREE_BASES: Record<2 | 3, readonly (readonly [number, number])[]> = {2: [[256, 28], [672, 60], [320, 92], [480, 92], [352, 124], [512, 124], [608, 124], [192, 156], [320, 156], [160, 188], [896, 188], [192, 220], [736, 220], [928, 220], [288, 252], [672, 252], [320, 284], [480, 284], [640, 284], [832, 284], [384, 316], [608, 316], [672, 316], [800, 316], [576, 348], [640, 348], [864, 348], [192, 380], [512, 380], [96, 412], [288, 412], [128, 444], [224, 444], [320, 444], [608, 444], [192, 476], [256, 476], [896, 476], [32, 508], [160, 508], [224, 508], [992, 508], [128, 540], [960, 540], [672, 572], [832, 572], [704, 604], [800, 604], [832, 636], [608, 668], [928, 668], [640, 700], [768, 700], [896, 700], [960, 700], [832, 732], [928, 732], [576, 764], [800, 764], [992, 796], [704, 828], [896, 828], [640, 860], [736, 860], [544, 892], [704, 892], [992, 892], [512, 924], [960, 956], [640, 988], [896, 988], [800, 1020]], 3: [[64, 124], [256, 124], [32, 156], [160, 156], [320, 156], [192, 188], [448, 188], [800, 188], [96, 220], [160, 220], [288, 220], [384, 220], [480, 220], [768, 220], [64, 252], [224, 252], [448, 252], [544, 252], [192, 284], [352, 284], [128, 316], [416, 316], [512, 316], [800, 316], [288, 348], [960, 348], [256, 380], [416, 412], [608, 444], [672, 444], [32, 476], [192, 476], [320, 476], [576, 476], [704, 476], [96, 508], [544, 508], [64, 540], [512, 572], [768, 572], [960, 572], [96, 604], [224, 604], [544, 604], [736, 604], [160, 636], [576, 636], [672, 636], [288, 668], [256, 700], [832, 700], [992, 700], [864, 732], [192, 764], [736, 764], [800, 764], [256, 796], [704, 796], [608, 828], [960, 828], [832, 860], [928, 860], [768, 892], [640, 924], [736, 924], [800, 924], [768, 956], [832, 956], [896, 988], [928, 1020]]};
 export const L3_BRIDGE: Rect = [378, 516, 132, 28];
+export const L3_NORTH_BRIDGE: Rect = [584, 64, 176, 48];
 export const L2_LADDERS: readonly Rect[] = [[450, 440, 28, 148], [962, 250, 26, 146]];
 export const TERRAIN: Record<StageOrdinal, readonly Rect[]> = {
   1: [
@@ -47,14 +48,16 @@ const inside = (x: number, y: number, [rx,ry,w,h]: Rect) => x >= rx && x < rx+w 
 export function touchesTerrain(stage: StageOrdinal, scale: number, point: Point, pixels: Uint8ClampedArray | null, width: number, height: number) {
   const left = (point.x-12)/scale, right = (point.x+12)/scale;
   const top = (point.y-20)/scale, bottom = (point.y-3)/scale;
+  const board = PARTICIPANT_STAGES[stage-1].board;
+  if (point.x+12>board.x-8 && point.x-12<board.x+8 && point.y-3>board.y+8 && point.y-20<board.y+46) return true;
   const ladder = stage === 2 && L2_LADDERS.some(rect => inside(left,top,rect) && inside(right,bottom,rect));
   if (!ladder && TERRAIN[stage].some(([x,y,w,h]) => left < x+w && right > x && top < y+h && bottom > y)) return true;
   if (!pixels) return false;
   for (let y=Math.max(0,Math.floor(top)); y<Math.min(height,Math.ceil(bottom)); y++) {
     for (let x=Math.max(0,Math.floor(left)); x<Math.min(width,Math.ceil(right)); x++) {
-      if (stage === 3 && inside(x,y,L3_BRIDGE)) continue;
+      if (stage === 3 && (inside(x,y,L3_BRIDGE) || inside(x,y,L3_NORTH_BRIDGE))) continue;
       const i=(y*width+x)*4, r=pixels[i], g=pixels[i+1], b=pixels[i+2];
-      if (stage === 1 ? x >= 160 && x < 350 && y >= 545 && r === 115 && g === 170 && b === 158 : b > 190 && b-r > 70 && b-g > 20) return true;
+      if (stage === 1 ? x >= 160 && x < 350 && y >= 545 && g-r > 15 && b-r > 20 : b-r > 60 && b-g > 20) return true;
     }
   }
   return false;

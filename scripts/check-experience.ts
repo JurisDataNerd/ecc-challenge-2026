@@ -32,6 +32,15 @@ for (const invalid of [{ ...progress, xpAwards: { x: '10' } }, { ...progress, ac
 }
 console.log('Experience storage and route boundaries passed');
 import { movementInput, movePlayer, touchesTerrain } from '../src/game/terrain';
+import { PARTICIPANT_STAGES } from '../src/data/participantStages';
+import { readFileSync } from 'node:fs';
+import { PNG } from 'pngjs';
+for(const stage of PARTICIPANT_STAGES){
+  const image=PNG.sync.read(readFileSync(`public${decodeURIComponent(stage.mapPath)}`));
+  assert.equal(image.width*stage.mapScale,stage.worldSize);
+  assert.equal(image.height*stage.mapScale,stage.worldSize);
+  assert.equal(touchesTerrain(stage.ordinal,stage.mapScale,stage.spawn,new Uint8ClampedArray(image.data),image.width,image.height),false,`L${stage.ordinal} must spawn on actual dry walkable ground`);
+}
 const zero = { x: 0, y: 0 };
 assert.deepEqual(movementInput({ x: 1, y: 1 }, { x: 1, y: 1 }, true), zero);
 assert.ok(Math.abs(Math.hypot(...Object.values(movementInput({ x: 1, y: 1 }, zero, false)))-1) < 1e-12);
@@ -51,6 +60,12 @@ const water = new Uint8ClampedArray(1024*1024*4);
 for (let y=500;y<560;y++) for (let x=360;x<530;x++) water.set([80,140,230,255],(y*1024+x)*4);
 assert.equal(touchesTerrain(3, 2, { x: 850, y: 1020 }, water, 1024, 1024), true);
 assert.equal(touchesTerrain(3, 2, { x: 850, y: 1070 }, water, 1024, 1024), false); // Rendered footbridge.
+water.set([50,90,150,255],(510*1024+450)*4);
+assert.equal(touchesTerrain(3,2,{x:900,y:1030},water,1024,1024),true); // Dark water still blocks feet.
+for(let y=64;y<112;y++)for(let x=584;x<760;x++)water.set([80,140,230,255],(y*1024+x)*4);
+assert.equal(touchesTerrain(3,2,{x:1300,y:180},water,1024,1024),false); // Original bridge's gaps are walkable.
+assert.equal(touchesTerrain(1,2,{x:820,y:900},null,640,640),true); // Quest post is solid.
+assert.equal(touchesTerrain(2,2,{x:828,y:1712},null,1024,1024),true); // Post on otherwise clear ground.
 console.log('Movement, paused input, and collision boundaries passed');
 
 // Draft links remain editable text; submitted evidence must be a safe external URL.
