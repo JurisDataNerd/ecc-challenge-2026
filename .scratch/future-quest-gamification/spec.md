@@ -4,6 +4,8 @@ Status: ready-for-human
 
 Implementation: V1 prototype merged into `origin/main` in PR #1 (`a36e533`) on 2026-09-29. Post-merge browser verification was completed on 2026-09-30; see `verification.md`.
 
+ECC formally approved the V1 rules on 2026-09-30; see issue 01 for the recorded sign-off.
+
 ## Problem
 
 The current app presents learning activity and game progress in different places. The prototype should make each participant's bootcamp journey easier to follow while keeping stage access and XP tied to ECC's rules.
@@ -47,6 +49,8 @@ V1 is individual. The Future Passport shows only the participant's Program track
 
 The current Supabase helper supports file uploads; it does not yet provide authoritative, duplicate-safe XP awards or stage-access decisions. Do not describe the first prototype's mock state as persistent or verified.
 
+Read-only review of the restored `ecc-future-quest-staging` project on 2026-09-30 found an `activity_ledger` with uniqueness on `(enrollment_id, event_type, source_id)`, versioned submissions, and stage schedule fields. It has no dedicated quiz-attempt, final-review, or published-selection records, and no deployed gamification function. The ledger can prevent duplicate identical event/source awards, but the event/source mapping and authoritative review and selection workflows remain undefined; see issue 07.
+
 ## Delivery sequence
 
 1. Create an isolated integration worktree from `origin/main` and retain this planning documentation. Even after fetching full history, `origin/main` and `adian` have no common merge base; do not merge the branch histories.
@@ -61,6 +65,5 @@ See the implementation issues in `issues/` for ownership and acceptance criteria
 
 ## Open items
 
-- ECC still needs to formally sign off on program rules; the accepted values are planning defaults until then.
 - L2 and L3 use the maps and quest content already present in `origin/main`; additional team-authored changes can be reviewed separately.
 - The production Supabase phase needs confirmed quiz, mission acceptance, final-review rubric, selection-result, and scheduled-opening data contracts.

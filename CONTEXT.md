@@ -40,6 +40,8 @@ Movement uses the existing Mixel game's controls: analog input on mobile and key
 
 **Stage access**: A later stage opens only after ECC publishes the participant's result and the scheduled opening time arrives. Participants who do not advance retain read-only access to previously available work. The Expedition map shows each stage's available or locked state.
 
+ECC approved the V1 XP, stage access, navigation, and individual-scope rules on 2026-09-30; the sign-off is recorded in `.scratch/future-quest-gamification/issues/01-confirm-gamification-rules.md`.
+
 ## Prototype data
 
 The first deliverable is a playable client prototype using mock data. Mock XP, review outcomes, and stage-access states must be visibly identified as demo data; they are not verified or persistent production records. The later Supabase phase connects XP and access to authoritative program, review, and selection data with duplicate-safe awards.

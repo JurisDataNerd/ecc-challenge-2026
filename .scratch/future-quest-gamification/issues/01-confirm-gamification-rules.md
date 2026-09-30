@@ -24,4 +24,4 @@ Record formal ECC sign-off on the accepted planning defaults before treating the
 
 ## Comments
 
-The user confirmed these defaults for the V1 prototype. Formal ECC sign-off remains open; keep the rules identified as planning defaults until ECC records its approval.
+The user explicitly authorized recording their approval as formal ECC sign-off on 2026-09-30. All six decisions above were approved without changes. Updated `CONTEXT.md` and `../spec.md` to record the decision.
