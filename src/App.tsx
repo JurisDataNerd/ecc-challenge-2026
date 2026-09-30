@@ -1,86 +1,39 @@
-import { useState } from 'react';
-import { ParticipantJourney, INITIAL_PARTICIPANT_DEMO } from './components/participant/ParticipantJourney';
-import type { ParticipantDemoState } from './components/participant/ParticipantJourney';
-import { StaffWorkspace } from './components/staff/StaffWorkspace';
-import { MentorReviewPanel } from './components/mentor/MentorReviewPanel';
-import { SelectionManager } from './components/admin/SelectionManager';
-import { STAGE_BOSS_MISSIONS } from './data/mockQuests';
-import { PathCode, Submission, UserRole } from './types';
-import { INITIAL_TALENT_POOL, TalentProfile } from './data/mockParticipants';
+import { lazy, Suspense } from 'react';
+import { Compass, ArrowRight, ArrowLeft, MapTrifold, Hammer, PresentationChart } from '@phosphor-icons/react';
+import './experience.css';
+
+const ProgramApp = lazy(() => import('./ProgramApp'));
+
+export function Brand() {
+  return <a className="fq-brand" href="/" aria-label="Future Quest, beranda"><Compass size={30} weight="duotone" /><span>Future Quest<small>ECC · SIAP IMPACT 2026</small></span></a>;
+}
 
 export default function App() {
-  const [currentRole, setCurrentRole] = useState<UserRole>('participant');
-  const [currentPath, setCurrentPath] = useState<PathCode>('professional');
-  const [currentStage, setCurrentStage] = useState<1 | 2 | 3>(1);
-  const [participantDemo, setParticipantDemo] = useState<ParticipantDemoState>(INITIAL_PARTICIPANT_DEMO);
-  const [isMentorOpen, setIsMentorOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [talentPool, setTalentPool] = useState<TalentProfile[]>(INITIAL_TALENT_POOL);
-  const currentSubmission = participantDemo.submissions[currentStage] || null;
-
-  const handleFinalizeMentorReview = (scores: Record<string, number>, feedback: string, decision: 'accepted' | 'changes_requested') => {
-    if (!currentSubmission || !['submitted', 'in_review'].includes(currentSubmission.status)) return;
-    const mission = STAGE_BOSS_MISSIONS[currentStage];
-    const evidence = mission.rubricCriteria.find(criterion => criterion.key === 'evidence_quality');
-    const evidenceScore = evidence ? scores[evidence.key] || 0 : 0;
-    const updatedSubmission: Submission = {
-      ...currentSubmission,
-      status: decision === 'accepted' ? 'reviewed' : 'changes_requested',
-      review: {
-        mentorId: 'mentor_demo',
-        mentorName: 'Mentor demo',
-        decision,
-        scores,
-        totalScore: Object.values(scores).reduce((total, score) => total + score, 0),
-        feedback,
-        finalizedAt: new Date().toISOString(),
-      },
-    };
-
-    setParticipantDemo(current => {
-      const xpAwards = { ...current.xpAwards };
-      if (decision === 'accepted') {
-        xpAwards[`mission:${currentStage}`] ??= 20;
-        if (evidence && evidenceScore >= evidence.maxScore * 0.8) xpAwards[`evidence:${currentStage}`] ??= 10;
-      }
-      return { ...current, submissions: { ...current.submissions, [currentStage]: updatedSubmission }, xpAwards };
-    });
-  };
-
-  if (currentRole === 'participant') {
-    return <ParticipantJourney
-      currentPath={currentPath}
-      currentRole={currentRole}
-      demo={participantDemo}
-      setDemo={setParticipantDemo}
-      onCompleteOnboarding={(path, futureBase) => {
-        setCurrentPath(path);
-        setParticipantDemo(current => ({ ...current, onboarded: true, futureBase, screen: 'expedition' }));
-      }}
-      onSelectStage={stage => setCurrentStage(stage)}
-      onRoleChange={setCurrentRole}
-    />;
-  }
-
-  return <>
-    <StaffWorkspace
-      role={currentRole}
-      currentPath={currentPath}
-      submissions={participantDemo.submissions}
-      onRoleChange={setCurrentRole}
-      onReview={stage => { setCurrentStage(stage); setIsMentorOpen(true); }}
-      onOpenAdmin={() => setIsAdminOpen(true)}
-    />
-    {isMentorOpen && <MentorReviewPanel
-      isOpen={isMentorOpen}
-      onClose={() => setIsMentorOpen(false)}
-      submission={currentSubmission}
-      onFinalizeReview={handleFinalizeMentorReview}
-    />}
-    {isAdminOpen && <SelectionManager
-      isOpen={isAdminOpen}
-      onClose={() => setIsAdminOpen(false)}
-      onUpdateTalentPool={setTalentPool}
-    />}
-  </>;
+  const path = window.location.pathname;
+  if (path === '/demo' || path.startsWith('/demo/')) return <div className="experience-program">
+    <div className="experience-session"><a href="/" aria-label="Kembali ke beranda"><ArrowLeft size={15} /> Beranda</a><span>Mode demo · progres simulasi</span><a href="/login">Login peserta</a></div>
+    <div className="experience-program-body"><Suspense fallback={<div className="experience-loading" role="status">Menyiapkan ekspedisi…</div>}><ProgramApp /></Suspense></div>
+  </div>;
+  if (path === '/login') return <div className="public-experience"><header className="public-nav"><Brand /><a href="/demo">Coba demo</a></header><main className="account-layout">
+    <div className="account-art" aria-hidden="true" />
+    <section className="account-panel"><a className="back-link" href="/"><ArrowLeft size={17} /> Beranda</a><h1>Selamat datang kembali.</h1><p>Login dengan akun yang diundang oleh ECC untuk melanjutkan perjalananmu.</p><div className="account-note">Akses akun peserta sedang disiapkan. Kamu tetap bisa menjelajahi ketiga stage melalui demo.</div><a className="entry-button entry-primary" href="/demo">Coba demo <ArrowRight size={18} /></a><p className="account-help">Belum menerima undangan? Hubungi tim program ECC.</p></section>
+  </main></div>;
+  if (path !== '/') return <div className="public-experience"><header className="public-nav"><Brand /></header><main className="missing-page"><h1>Jalur ini belum ditemukan.</h1><p>Kembali ke beranda untuk login atau mencoba ekspedisi.</p><a className="entry-button entry-primary" href="/">Ke beranda</a></main></div>;
+  return <div className="public-experience">
+    <a className="skip-link" href="#journey">Langsung ke konten</a>
+    <header className="public-nav"><Brand /><nav aria-label="Navigasi utama"><a href="#stages">Tentang perjalanan</a><a className="entry-button entry-secondary" href="/login">Login</a></nav></header>
+    <main id="journey">
+      <section className="landing-hero">
+        <div className="hero-copy"><p className="program-name">Program SIAP IMPACT 2026</p><h1>Perjalanan belajar yang bisa kamu jelajahi.</h1><p className="hero-description">Temukan masalah, bangun solusi, lalu ceritakan dampaknya. Future Quest membawa perjalanan bootcamp-mu ke dalam dunia yang bisa kamu mainkan.</p><div className="entry-actions"><a className="entry-button entry-primary" href="/demo">Coba demo <ArrowRight size={18} /></a><a className="entry-button entry-secondary" href="/login">Login peserta</a></div><p className="entry-caption">Demo terbuka untuk semua. Akun peserta melalui undangan ECC.</p></div>
+        <figure className="hero-landscape"><img src="/assets/mixel/Sample%20640x640.PNG" width="640" height="640" alt="Dunia pixel Future Quest, dengan jalan setapak, taman, dan tempat eksplorasi" fetchPriority="high" /><figcaption><span className="pixel-label">Future Base</span><span>Titik awal perjalananmu</span></figcaption></figure>
+      </section>
+      <section className="landing-stages" id="stages" aria-labelledby="stage-heading"><div className="stage-intro"><h2>Tiga stage. Satu perjalanan milikmu.</h2><p>Bergerak di peta, temukan papan misi, dan kerjakan tantangan sesuai jalur programmu. Kembali ke peta ekspedisi kapan pun untuk berpindah stage.</p></div><ol className="landing-route">
+        <li><MapTrifold size={28} weight="duotone" /><div><span className="pixel-label">L1 · Discover</span><h3>Mulai dari rasa ingin tahu.</h3><p>Amati pengalaman nyata dan temukan masalah yang layak diselesaikan.</p></div></li>
+        <li><Hammer size={28} weight="duotone" /><div><span className="pixel-label">L2 · Build</span><h3>Wujudkan idemu.</h3><p>Bangun prototipe, uji dengan pengguna, dan pelajari hasilnya.</p></div></li>
+        <li><PresentationChart size={28} weight="duotone" /><div><span className="pixel-label">L3 · Pitch</span><h3>Ceritakan hasil perjalanan.</h3><p>Sempurnakan solusi dan siapkan presentasi finalmu.</p></div></li>
+      </ol></section>
+      <section className="landing-invitation"><div><h2>Sudah menjadi peserta?</h2><p>Gunakan undangan ECC untuk mengaktifkan akun, lalu lanjutkan ekspedisimu.</p></div><a className="entry-button entry-secondary" href="/login">Login peserta</a></section>
+    </main>
+    <footer className="public-footer"><span>ECC · SIAP IMPACT 2026</span><span>Professional · Social Impact · Bisnis</span></footer>
+  </div>;
 }
