@@ -80,10 +80,26 @@ try {
   await touch('touchEnd', []);
   const resumed = await position();
   assert.ok(resumed.x > paused.x + 10, 'Touch movement must resume after closing pause');
+  await evalPage(`(()=>{const s=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0];s.player.setPosition(s.stage.board.x,s.stage.board.y);return true})()`);
+  await evalPage(`new Promise((resolve,reject)=>{const start=performance.now();const check=()=>{if(document.querySelector('.interact-button'))resolve(true);else if(performance.now()-start>5000)reject(new Error('Board action missing'));else requestAnimationFrame(check)};check()})`);
+  const action=await evalPage(`(()=>{const r=document.querySelector('.interact-button').getBoundingClientRect();return {id:2,x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+  await touch('touchStart',[action]);await touch('touchEnd',[]);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const boardLayout=await evalPage(`(()=>{const d=document.querySelector('.board-dialog');if(!d)return null;const r=d.getBoundingClientRect();return {width:r.width,height:r.height,withinViewport:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,overflow:d.scrollWidth>d.clientWidth}})()`);
+  assert.ok(boardLayout?.withinViewport && !boardLayout.overflow,'Touch board action must open a readable landscape dialog');
+  const modalPosition=await position();
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,120))');
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+  assert.deepEqual(await position(),modalPosition,'Task dialog must block keyboard movement');
+  const boardScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/06-stage${stage}-touch-board.png`,Buffer.from(boardScreenshot.data,'base64'));
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
   await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true},sessionId);
   await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
-  const portrait = await evalPage(`(()=>{const note=document.querySelector('.orientation-note');const back=document.querySelector('.stage-return').getBoundingClientRect();return {visible:getComputedStyle(note).display!=='none',backVisible:back.top>=0&&back.bottom<=innerHeight};})()`);
-  assert.ok(portrait.visible && portrait.backVisible, 'Portrait guidance and expedition return must stay available');
+  const portrait = await evalPage(`(()=>{const note=document.querySelector('.orientation-note');const back=document.querySelector('.stage-return').getBoundingClientRect();return {visible:getComputedStyle(note).display!=='none',width:note.getBoundingClientRect().width,backVisible:back.top>=0&&back.bottom<=innerHeight};})()`);
+  assert.ok(portrait.visible && portrait.width >= 380 && portrait.backVisible, 'Portrait guidance and expedition return must stay available');
   const beforePortraitInput=await position();
   await send('Input.dispatchKeyEvent',{type:'keyDown',key:'w',code:'KeyW',windowsVirtualKeyCode:87},sessionId);
   await evalPage('new Promise(resolve=>setTimeout(resolve,150))');
@@ -91,7 +107,7 @@ try {
   assert.deepEqual(await position(),beforePortraitInput,'Portrait guidance must block game movement');
   const portraitScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
   await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-portrait.png`,Buffer.from(portraitScreenshot.data,'base64'));
-  console.log(JSON.stringify({ stage, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, portrait, result: 'Keyboard collision, actual touch, pause/resume, and portrait passed' }, null, 2));
+  console.log(JSON.stringify({ stage, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, boardLayout, portrait, result: 'Keyboard collision, actual touch interaction, modal input suppression, pause/resume, and portrait passed' }, null, 2));
   await send('Emulation.setTouchEmulationEnabled', { enabled: false }, sessionId);
   await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId);
 } finally { socket.close(); }

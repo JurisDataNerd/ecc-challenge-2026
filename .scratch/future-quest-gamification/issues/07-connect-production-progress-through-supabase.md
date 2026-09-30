@@ -32,3 +32,5 @@ This is a later phase. Keep the first playable prototype on mock data until the 
 ## Comments
 
 Repository review on 2026-09-30 confirmed that the PRD schema is logical and not migration-ready, the app helper only uploads to Supabase Storage, and this checkout has no Supabase CLI/configuration, migrations, or configured Supabase/database environment. The authoritative attempt, final-review, selection, and schedule contracts and a production owner are still missing, so this remains deferred and `needs-info`.
+
+Update after the 2026-09-30 game experience overhaul: Supabase CLI/configuration and ignored client environment are now available; real invited participant authentication is connected to ECC staging. Schema-only inspection found profiles, enrollments, quests, stages, activity_ledger, submissions, and assignment tables. The historical configuration gap above is closed. Authoritative attempts, final review, selection/schedule contracts, staff identity mapping, and a production owner are still unconfirmed. Learning state remains explicitly simulated, so this ticket stays needs-info. See ../../game-experience-overhaul/verification.md.

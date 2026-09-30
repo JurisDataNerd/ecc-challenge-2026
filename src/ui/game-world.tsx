@@ -140,7 +140,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objec
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
 <div className="world-objective"><span>{readOnly ? "Mode lihat" : "Langkah berikutnya"}</span><strong>{objective}</strong><small>Tugas tersedia di {stage.boardName}</small></div>
 
-      <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Gunakan tombol Peta untuk kembali memilih stage.</p></div>
+      <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Gunakan tombol panah kembali di bagian atas untuk memilih stage.</p></div>
       <div
         className="virtual-stick"
         role="group"

@@ -1,6 +1,6 @@
 {
   "stage": 1,
-  "wallY": 980.258544,
+  "wallY": 980.2286000000003,
   "wallBoundary": 980,
   "touch": 5,
   "initial": {
@@ -8,16 +8,27 @@
     "y": 880
   },
   "moved": {
-    "x": 937.7989142857144,
+    "x": 938.940542857143,
     "y": 880
   },
   "paused": {
-    "x": 938.929142857143,
+    "x": 938.940542857143,
     "y": 880
   },
   "resumed": {
-    "x": 972.8001714285717,
+    "x": 972.8571714285716,
     "y": 880
   },
-  "result": "Touch movement and paused input passed"
+  "boardLayout": {
+    "width": 760,
+    "height": 358,
+    "withinViewport": true,
+    "overflow": false
+  },
+  "portrait": {
+    "visible": true,
+    "width": 390,
+    "backVisible": true
+  },
+  "result": "Keyboard collision, actual touch interaction, modal input suppression, pause/resume, and portrait passed"
 }

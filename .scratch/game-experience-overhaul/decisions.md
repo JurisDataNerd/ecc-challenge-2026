@@ -1,6 +1,6 @@
 # Game experience overhaul
 
-Status: ready-for-agent
+Status: resolved
 
 ## Confirmed choices
 
@@ -31,7 +31,4 @@ See spec.md and issues/01 through issues/06 for the approved implementation sequ
 
 ## Implementation progress
 
-- Landing and invitation authentication are implemented (commits af920e7, af43264).
-- Ticket 03 work in progress: browser routes for intro/expedition/stage/Passport/staff demo; versioned browser progress isolated by visitor or authenticated user ID; explicit storage failure notice; lighter navigation using the established landing palette.
-- Remaining before ticket 03 acceptance: browser navigation/reload checks, deeper stored-data validation, durable attachment restoration, responsive visual inspection.
-- Tickets 04–06 remain pending. Do not treat this log as final acceptance.
+All six tickets are resolved in this workspace. Landing, invited staging authentication, URL navigation and local progress, shared scenery collision/touch controls, guided stage/task UI, and final verification are complete. See [verification.md](verification.md) for the acceptance audit and evidence. Original gamification 01 (ECC rules) and 07 (authoritative production learning progress) remain pending.

@@ -1,6 +1,6 @@
 # Game experience overhaul
 
-Status: ready-for-agent
+Status: resolved
 
 ## Outcome
 

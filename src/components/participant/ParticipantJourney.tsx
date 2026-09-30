@@ -110,7 +110,7 @@ export function ParticipantJourney({
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
             <header className="stage-toolbar">
-              <button className="button button-quiet stage-return" onClick={() => toggleView('expedition')}><ArrowLeft size={18} /><span>Peta ekspedisi</span></button>
+              <button className="button button-quiet stage-return" aria-label="Kembali ke peta ekspedisi" onClick={() => toggleView('expedition')}><ArrowLeft size={18} /><span>Peta ekspedisi</span></button>
               <div className="stage-toolbar-title"><strong>{activeStage.phase} {activeStage.name}</strong><small>{trackLabel(currentPath)}</small></div>
               <div className="stage-actions"><button className="button button-quiet" onClick={() => toggleView('passport')} aria-label="Buka Future Passport"><BookOpenText size={18} /><span>Passport</span></button><button className="button button-quiet" onClick={openPause}>Jeda <kbd>Esc</kbd></button></div>
             </header>

@@ -24,7 +24,7 @@ Shared product language for the ECC Future Quest bootcamp experience.
 
 ## Participant game experience
 
-The Participant game is individual and solo. The app starts with the separate Onboarding checkpoint, then offers the Expedition map. The current `main` app is the integration base; the existing `adian` Mixel world is adapted as L1. L2 and L3 are separate team-owned scenes.
+The Participant game is individual and solo. Public entry offers participant login or a visitor demo. New participants complete the separate Onboarding checkpoint before the Expedition map; returning participants continue their journey. L1 uses the Mixel world; L2 and L3 are separate team-owned scenes.
 
 Movement uses the existing Mixel game's controls: analog input on mobile and keyboard on desktop. Keep the world non-combat and non-multiplayer. Guilds, teammate progress, peer help, side quests, guild reputation, leaderboards, and talent-pool social features are outside V1.
 
@@ -42,4 +42,4 @@ Movement uses the existing Mixel game's controls: analog input on mobile and key
 
 ## Prototype data
 
-The first deliverable is a playable client prototype using mock data. Mock XP, review outcomes, and stage-access states must be visibly identified as demo data; they are not verified or persistent production records. The later Supabase phase connects XP and access to authoritative program, review, and selection data with duplicate-safe awards.
+**Demo progress**: Simulated learning activity, XP, submissions, reviews, and access, identified as simulation and kept separate for each individual. Participant authentication establishes identity; it does not make these simulated outcomes verified ECC results. Authoritative progress requires ECC program, review, and selection records.
