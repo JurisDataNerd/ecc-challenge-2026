@@ -1,6 +1,6 @@
 # Expedition navigation and returning player flow
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 01, 02
 Spec: ../spec.md
 

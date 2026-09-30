@@ -41,6 +41,7 @@ export function ParticipantJourney({
   onCompleteOnboarding,
   onSelectStage,
   onRoleChange,
+  allowStaffDemo = true,
 }: {
   currentPath: PathCode;
   currentRole: UserRole;
@@ -49,6 +50,7 @@ export function ParticipantJourney({
   onCompleteOnboarding: (path: PathCode, futureBase: FutureBase) => void;
   onSelectStage: (stage: StageOrdinal) => void;
   onRoleChange: (role: UserRole) => void;
+  allowStaffDemo?: boolean;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
   const [boardOpen, setBoardOpen] = useState(false);
@@ -111,11 +113,11 @@ export function ParticipantJourney({
         <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
         <div className="topbar-spacer" />
         {demo.onboarded && <span className="track-chip"><span />{trackLabel(currentPath)}</span>}
-        <label className="workspace-picker"><UserCircle size={17} /><span>Workspace</span>
+        {allowStaffDemo && <label className="workspace-picker"><UserCircle size={17} /><span>Demo peran</span>
           <select aria-label="Pilih workspace" value={currentRole} onChange={event => onRoleChange(event.target.value as UserRole)}>
             <option value="participant">Peserta</option><option value="mentor">Mentor</option><option value="admin">Admin</option>
           </select>
-        </label>
+        </label>}
       </header>
 
       <main className={`participant-main ${demo.screen === 'stage' ? 'has-game' : ''}`}>

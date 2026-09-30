@@ -6,7 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, { auth: { detectSessionInUrl: false } })
   : null;
 
 /**
@@ -15,12 +15,14 @@ export const supabase = isSupabaseConfigured
 export async function uploadSubmissionFile(
   file: File,
   enrollmentId: string,
-  stageOrdinal: number
+  stageOrdinal: number,
+  persist = false,
 ): Promise<{ url: string; name: string; size: number; type: string }> {
   const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
   const filePath = `${enrollmentId}/stage_${stageOrdinal}/${fileName}`;
 
-  if (supabase && isSupabaseConfigured) {
+  // Simulated submissions must never reach program storage merely because auth is configured.
+  if (persist && supabase && isSupabaseConfigured) {
     const { data, error } = await supabase.storage
       .from('ecc-submissions')
       .upload(filePath, file);

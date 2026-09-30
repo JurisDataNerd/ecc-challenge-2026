@@ -89,3 +89,4 @@ Desktop.ini
 # Vite & bundler cache
 .vite/
 .turbo/
+supabase/.temp/

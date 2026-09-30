@@ -1,0 +1,45 @@
+{
+  "tables": [
+    "mentor_assignments",
+    "jury_assignments",
+    "profiles",
+    "quests",
+    "paths",
+    "activity_ledger",
+    "submission_versions",
+    "submissions",
+    "stages",
+    "enrollments",
+    "audit_logs"
+  ],
+  "profiles": [
+    {
+      "table": "profiles",
+      "columns": [
+        "id",
+        "name",
+        "email",
+        "role",
+        "city",
+        "must_change_password",
+        "created_at",
+        "updated_at",
+        "access_revoked_at"
+      ]
+    },
+    {
+      "table": "enrollments",
+      "columns": [
+        "id",
+        "profile_id",
+        "path_id",
+        "status",
+        "talent_pool_consent",
+        "talent_pool_consented_at",
+        "activated_at",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ]
+}

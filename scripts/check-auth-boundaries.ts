@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import type { Session } from '@supabase/supabase-js';
+import { authErrorMessage, clearPasswordLink, hasPasswordLink } from '../src/lib/auth';
+import { navigate } from '../src/lib/navigation';
+
+const storage = new Map<string, string>();
+Object.defineProperty(globalThis, 'sessionStorage', { value: { getItem: (key: string) => storage.get(key) || null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) } });
+const session = { user: { id: 'synthetic-user' } } as Session;
+assert.equal(authErrorMessage({ code: 'invalid_credentials' }).includes('Email atau kata sandi'), true);
+assert.equal(authErrorMessage({ code: 'otp_expired' }).includes('Tautan sudah tidak berlaku'), true);
+assert.equal(hasPasswordLink(null, 'invite'), false);
+storage.set('fq:password-link', JSON.stringify({ kind: 'invite', userId: 'synthetic-user', createdAt: Date.now() }));
+assert.equal(hasPasswordLink(session, 'invite'), true);
+assert.equal(hasPasswordLink(session, 'recovery'), false);
+storage.set('fq:password-link', JSON.stringify({ kind: 'invite', userId: 'another-user', createdAt: Date.now() }));
+assert.equal(hasPasswordLink(session, 'invite'), false);
+storage.set('fq:password-link', JSON.stringify({ kind: 'invite', userId: 'synthetic-user', createdAt: Date.now() - 16 * 60 * 1000 }));
+assert.equal(hasPasswordLink(session, 'invite'), false);
+clearPasswordLink();
+assert.equal(storage.size, 0);
+assert.throws(() => navigate('https://outside.example/'));
+assert.throws(() => navigate('//outside.example/'));
+console.log('PASS: callback error guidance, link ownership/expiry, link cleanup, and external-route rejection.');

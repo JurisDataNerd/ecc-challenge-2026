@@ -8,7 +8,7 @@ import { STAGE_BOSS_MISSIONS } from './data/mockQuests';
 import { PathCode, Submission, UserRole } from './types';
 import { INITIAL_TALENT_POOL, TalentProfile } from './data/mockParticipants';
 
-export default function App() {
+export default function ProgramApp({ mode = 'demo' }: { mode?: 'demo' | 'participant' }) {
   const [currentRole, setCurrentRole] = useState<UserRole>('participant');
   const [currentPath, setCurrentPath] = useState<PathCode>('professional');
   const [currentStage, setCurrentStage] = useState<1 | 2 | 3>(1);
@@ -58,7 +58,8 @@ export default function App() {
         setParticipantDemo(current => ({ ...current, onboarded: true, futureBase, screen: 'expedition' }));
       }}
       onSelectStage={stage => setCurrentStage(stage)}
-      onRoleChange={setCurrentRole}
+      onRoleChange={mode === 'demo' ? setCurrentRole : () => undefined}
+      allowStaffDemo={mode === 'demo'}
     />;
   }
 
