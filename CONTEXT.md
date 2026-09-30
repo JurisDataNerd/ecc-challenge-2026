@@ -40,6 +40,8 @@ Movement uses the existing Mixel game's controls: analog input on mobile and key
 
 **Stage access**: A later stage opens only after ECC publishes the participant's result and the scheduled opening time arrives. Participants who do not advance retain read-only access to previously available work. The Expedition map shows each stage's available or locked state.
 
+ECC approved the V1 XP, stage access, navigation, and individual-scope rules on 2026-09-30; the sign-off is recorded in `.scratch/future-quest-gamification/issues/01-confirm-gamification-rules.md`.
+
 ## Prototype data
 
 **Demo progress**: Simulated learning activity, XP, submissions, reviews, and access, identified as simulation and kept separate for each individual. Participant authentication establishes identity; it does not make these simulated outcomes verified ECC results. Authoritative progress requires ECC program, review, and selection records.
