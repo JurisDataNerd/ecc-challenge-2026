@@ -21,10 +21,9 @@ Replace prototype-only progress and access state with authoritative production d
 
 ## Needed
 
-- Confirm which Supabase project is intended for production and provide active access. The authenticated CLI account currently lists `ecc-future-quest-staging` (`gzyqpvihvqgxttpshmde`) and `ecc-future-quest-production` (`ksosknxddshnrtczxtmd`); both report `INACTIVE`, and neither is named exactly `ecc`.
+- Confirm the production project and owner for the XP ledger and stage-access decision. The user authorized using `ecc-future-quest-staging` (`gzyqpvihvqgxttpshmde`), which is now active; `ecc-future-quest-production` (`ksosknxddshnrtczxtmd`) still reports `INACTIVE`.
 - Confirmed integration contracts for quiz attempts, accepted missions, final rubric results, selection decisions, and scheduled stage openings.
-- A production owner for the XP ledger and stage-access decision.
-- Confirmation that the current Supabase schema/services expose those authoritative sources. The existing helper inspected for this plan only handles file uploads.
+- Confirmation of the authoritative status semantics and data source. The staging schema has submission versions and stage schedule fields, but no dedicated quiz-attempt, final-review, published-selection, or XP-ledger tables. The existing app helper only uploads files to Supabase Storage.
 
 ## Sequence
 
@@ -32,4 +31,4 @@ This is a later phase. Keep the first playable prototype on mock data until the 
 
 ## Comments
 
-Repository and CLI review on 2026-09-30 found an authenticated Supabase CLI session via `npx supabase`, but no `supabase/` project configuration or migrations in this checkout. The CLI lists the two projects above and reports both as `INACTIVE`; only project metadata was inspected, and no remote schema inspection was attempted. The local SQL draft has submissions, reviews, selection runs/candidates, and stage `opens_at`, but it does not define quiz attempts or an XP ledger, and does not fully specify the acceptance/review/access workflows. The application helper only uploads files to Supabase Storage. Production project access, the remaining authoritative contracts, and the production owner are still missing, so implementation remains deferred and `needs-info`. No remote project was modified or reactivated.
+Repository and Supabase review on 2026-09-30: the user authorized use of the existing project. The staging project was resumed in Supabase Studio; `npx supabase projects list` now reports it as `ACTIVE_HEALTHY`. The production project remains `INACTIVE`. A read-only schema visualizer review showed public tables `profiles`, `paths`, `stages`, `enrollments`, `quests`, `submissions`, `submission_versions`, `audit_logs`, and `mentor_assignments`. `stages` has open/review/cutoff timestamps; `quests` has kind and max-attempt fields; `submissions` and `submission_versions` carry workflow/version state. There are no dedicated quiz-attempt, review/rubric, published-selection, or XP-ledger tables. Submission versions may hold retries, but the authoritative rules for first valid quiz attempts, mission acceptance, final review, published results, and access decisions are not defined. The app helper still only handles Storage uploads. No application schema, database records, or production project were changed. Production access/ownership and the missing workflow contracts remain open, so implementation is deferred and status stays `needs-info`.

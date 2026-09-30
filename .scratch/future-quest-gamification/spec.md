@@ -49,6 +49,8 @@ V1 is individual. The Future Passport shows only the participant's Program track
 
 The current Supabase helper supports file uploads; it does not yet provide authoritative, duplicate-safe XP awards or stage-access decisions. Do not describe the first prototype's mock state as persistent or verified.
 
+Read-only review of the restored `ecc-future-quest-staging` project on 2026-09-30 found submission/versioning and stage schedule tables, but no dedicated quiz-attempt, final-review, published-selection, or XP-ledger tables. Its current schema does not provide all production authority required by issue 07.
+
 ## Delivery sequence
 
 1. Create an isolated integration worktree from `origin/main` and retain this planning documentation. Even after fetching full history, `origin/main` and `adian` have no common merge base; do not merge the branch histories.
