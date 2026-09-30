@@ -7,9 +7,10 @@ import { PathCode } from '../types';
 interface PhaserGameProps {
   currentPath: PathCode;
   currentStage: number;
+  paused?: boolean;
 }
 
-export const PhaserGame: React.FC<PhaserGameProps> = ({ currentPath, currentStage }) => {
+export const PhaserGame: React.FC<PhaserGameProps> = ({ currentPath, currentStage, paused = false }) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameInstanceRef = useRef<Phaser.Game | null>(null);
 
@@ -52,7 +53,7 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ currentPath, currentStag
     game.events.once('ready', () => {
       const worldScene = game.scene.getScene('WorldScene') as WorldScene;
       if (worldScene) {
-        worldScene.init({ pathCode: currentPath, stageOrdinal: currentStage });
+        worldScene.scene.restart({ pathCode: currentPath, stageOrdinal: currentStage });
       }
     });
 
@@ -73,10 +74,17 @@ export const PhaserGame: React.FC<PhaserGameProps> = ({ currentPath, currentStag
     };
   }, []);
 
+  useEffect(() => {
+    const game = gameInstanceRef.current;
+    if (!game?.scene.isActive('WorldScene')) return;
+    if (paused) game.scene.pause('WorldScene');
+    else game.scene.resume('WorldScene');
+  }, [paused]);
+
   return (
     <div 
       ref={gameContainerRef} 
-      className="absolute inset-0 w-full h-full overflow-hidden cursor-crosshair m-0 p-0 bg-[#3f739e]"
+      className="game-viewport cursor-crosshair"
     />
   );
 };

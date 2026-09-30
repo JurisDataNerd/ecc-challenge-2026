@@ -35,6 +35,7 @@ export class WorldScene extends Phaser.Scene {
   private worldBackground!: Phaser.GameObjects.Image;
   private enemies: EnemySprite[] = [];
   private boss!: BossSprite;
+  private gameEventUnsubs: Array<() => void> = [];
   private bossTorches: Phaser.GameObjects.Sprite[] = [];
   private bossLights: Phaser.GameObjects.Arc[] = [];
   private defeatedEnemyIds: Set<string> = new Set();
@@ -81,23 +82,27 @@ export class WorldScene extends Phaser.Scene {
       this.updateCameraBounds();
     });
 
-    GameEventBus.on('SET_STAGE', (stageOrdinal: number) => {
+    this.gameEventUnsubs.push(GameEventBus.on('SET_STAGE', (stageOrdinal: number) => {
       if (this.currentStage !== stageOrdinal) {
         this.switchStage(stageOrdinal);
       }
-    });
+    }));
 
-    GameEventBus.on('SET_PATH', (pathCode: PathCode) => {
+    this.gameEventUnsubs.push(GameEventBus.on('SET_PATH', (pathCode: PathCode) => {
       this.currentPath = pathCode;
       this.updatePlayerTexture();
-    });
+    }));
 
-    GameEventBus.on('ENEMY_DEFEATED', (enemyId: string) => {
+    this.gameEventUnsubs.push(GameEventBus.on('ENEMY_DEFEATED', (enemyId: string) => {
       this.defeatEnemy(enemyId);
-    });
+    }));
 
-    GameEventBus.on('BOSS_DEFEATED', () => {
+    this.gameEventUnsubs.push(GameEventBus.on('BOSS_DEFEATED', () => {
       this.celebrateBossDefeat();
+    }));
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.gameEventUnsubs.splice(0).forEach(unsubscribe => unsubscribe());
     });
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {

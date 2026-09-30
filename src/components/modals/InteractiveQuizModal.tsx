@@ -11,6 +11,7 @@ export function InteractiveQuizModal({
   readOnly = false,
   onClose,
   onSubmit,
+  onCorrect,
 }: {
   quiz: QuizQuestion | null;
   currentPath?: PathCode;
@@ -19,6 +20,7 @@ export function InteractiveQuizModal({
   readOnly?: boolean;
   onClose: () => void;
   onSubmit: (quizId: string) => void;
+  onCorrect?: (quizId: string) => void;
 }) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -31,6 +33,7 @@ export function InteractiveQuizModal({
     setSubmitted(true);
     setEarnedXp(current => current || !alreadyAttempted);
     onSubmit(quiz.id);
+    if (selected.isCorrect) onCorrect?.(quiz.id);
   };
 
   return (

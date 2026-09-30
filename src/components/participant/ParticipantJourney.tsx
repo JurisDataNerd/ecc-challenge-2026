@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle, XCircle } from '@phosphor-icons/react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FutureBase, PathCode, Submission, UserRole } from '../../types';
@@ -7,6 +7,9 @@ import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, ty
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
 import { GameWorld } from '../../ui/game-world';
+import { GameEventBus } from '../../game/GameEventBus';
+
+const PhaserGame = lazy(() => import('../../game/PhaserGame').then(module => ({ default: module.PhaserGame })));
 
 export type ParticipantDemoState = {
   screen: 'onboarding' | 'expedition' | 'stage' | 'passport';
@@ -51,10 +54,23 @@ export function ParticipantJourney({
   const [boardOpen, setBoardOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
   const [activeMission, setActiveMission] = useState<(typeof STAGE_BOSS_MISSIONS)[number] | null>(null);
+  const [returnToBoard, setReturnToBoard] = useState(false);
   const totalXp = useMemo(() => Object.values(demo.xpAwards).reduce((sum, amount) => sum + amount, 0), [demo.xpAwards]);
   const activeStage = PARTICIPANT_STAGES.find(stage => stage.ordinal === demo.currentStage) || PARTICIPANT_STAGES[0];
   const activeGate = getStageAccess(activeStage.ordinal, demo.access);
   const openBoard = useCallback(() => setBoardOpen(true), []);
+
+  useEffect(() => {
+    const stopQuiz = GameEventBus.on('TRIGGER_QUIZ', (quiz: (typeof STAGE_QUIZZES)[number]) => {
+      setReturnToBoard(false);
+      setActiveQuiz(quiz);
+    });
+    const stopMission = GameEventBus.on('TRIGGER_BOSS_MISSION', (mission: (typeof STAGE_BOSS_MISSIONS)[1]) => {
+      setReturnToBoard(false);
+      setActiveMission(mission);
+    });
+    return () => { stopQuiz(); stopMission(); };
+  }, []);
 
   const enterStage = (stage: ParticipantStage) => {
     const access = getStageAccess(stage.ordinal, demo.access);
@@ -112,7 +128,13 @@ export function ParticipantJourney({
               <div className="stage-toolbar-title"><span>{activeStage.phase} · {activeStage.name}</span><small>{trackLabel(currentPath)} · Individual</small></div>
               <button className="button button-quiet" onClick={() => toggleView('passport')}><BookOpenText size={17} /> Future Passport</button>
             </header>
-            <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} paused={boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} />
+            {activeStage.ordinal === 1 ? (
+              <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} paused={boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} />
+            ) : (
+              <Suspense fallback={<div className="game-viewport"><div className="loading-note">Memuat permainan {activeStage.phase}…</div></div>}>
+                <PhaserGame key={activeStage.ordinal} currentPath={currentPath} currentStage={activeStage.ordinal} paused={boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} />
+              </Suspense>
+            )}
             <QuestBoard
               isOpen={boardOpen}
               stage={activeStage}
@@ -121,8 +143,8 @@ export function ParticipantJourney({
               quizAttempts={demo.quizAttempts}
               submission={demo.submissions[activeStage.ordinal]}
               onClose={() => setBoardOpen(false)}
-              onSelectQuiz={quiz => { setBoardOpen(false); setActiveQuiz(quiz); }}
-              onSelectMission={mission => { setBoardOpen(false); setActiveMission(mission); }}
+              onSelectQuiz={quiz => { setBoardOpen(false); setReturnToBoard(true); setActiveQuiz(quiz); }}
+              onSelectMission={mission => { setBoardOpen(false); setReturnToBoard(true); setActiveMission(mission); }}
             />
             <InteractiveQuizModal
               key={activeQuiz?.id || 'no-quiz'}
@@ -131,8 +153,9 @@ export function ParticipantJourney({
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               alreadyAttempted={Boolean(activeQuiz && demo.quizAttempts.includes(activeQuiz.id))}
               readOnly={activeGate.readOnly}
-              onClose={() => { setActiveQuiz(null); setBoardOpen(true); }}
+              onClose={() => { setActiveQuiz(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
               onSubmit={markQuizAttempt}
+              onCorrect={quizId => GameEventBus.emit('ENEMY_DEFEATED', quizId)}
             />
             <BossMissionModal
               key={activeMission?.id || 'no-mission'}
@@ -141,7 +164,7 @@ export function ParticipantJourney({
               currentPath={currentPath}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               readOnly={activeGate.readOnly}
-              onClose={() => { setActiveMission(null); setBoardOpen(true); }}
+              onClose={() => { setActiveMission(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
               onSubmitMission={saveMission}
             />
           </section>

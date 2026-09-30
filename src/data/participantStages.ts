@@ -72,8 +72,8 @@ export interface DemoAccessState {
 }
 
 export const DEFAULT_DEMO_ACCESS: DemoAccessState = {
-  stage2: { resultPublished: false, decision: 'advance', scheduledOpen: false },
-  stage3: { resultPublished: false, decision: 'advance', scheduledOpen: false },
+  stage2: { resultPublished: true, decision: 'advance', scheduledOpen: true },
+  stage3: { resultPublished: true, decision: 'advance', scheduledOpen: true },
 };
 
 export function getStageAccess(ordinal: StageOrdinal, access: DemoAccessState) {
