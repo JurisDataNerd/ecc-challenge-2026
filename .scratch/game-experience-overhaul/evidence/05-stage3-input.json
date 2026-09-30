@@ -1,0 +1,27 @@
+{
+  "stage": 3,
+  "wallY": 1232.2803999999992,
+  "wallBoundary": 1232,
+  "touch": 5,
+  "initial": {
+    "x": 1220,
+    "y": 1120
+  },
+  "moved": {
+    "x": 1262.9226285714294,
+    "y": 1120
+  },
+  "paused": {
+    "x": 1262.9226285714294,
+    "y": 1120
+  },
+  "resumed": {
+    "x": 1297.9385428571443,
+    "y": 1120
+  },
+  "portrait": {
+    "visible": true,
+    "backVisible": true
+  },
+  "result": "Keyboard collision, actual touch, pause/resume, and portrait passed"
+}

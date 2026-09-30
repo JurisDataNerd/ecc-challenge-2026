@@ -8,12 +8,13 @@ export type ParticipantDemoState = {
   currentStage: StageOrdinal;
   access: DemoAccessState;
   quizAttempts: string[];
+  introducedStages: StageOrdinal[];
   submissions: Record<number, Submission>;
   xpAwards: Record<string, number>;
 };
 export const INITIAL_PARTICIPANT_DEMO: ParticipantDemoState = {
   screen: 'onboarding', onboarded: false, futureBase: null, currentStage: 1,
-  access: DEFAULT_DEMO_ACCESS, quizAttempts: [], submissions: {}, xpAwards: {},
+  access: DEFAULT_DEMO_ACCESS, quizAttempts: [], introducedStages: [], submissions: {}, xpAwards: {},
 };
 const key = (scope: string) => `fq:progress:v1:${scope}`;
 const object = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -25,6 +26,7 @@ export const isEvidenceLink = (value: string) => {
 function validProgress(p: unknown, scope: string): p is ParticipantDemoState {
   if (!object(p) || typeof p.onboarded !== 'boolean' || ![1, 2, 3].includes(p.currentStage)
     || !['onboarding', 'expedition', 'stage', 'passport'].includes(p.screen)
+    || (p.introducedStages !== undefined && (!Array.isArray(p.introducedStages) || !p.introducedStages.every((stage: unknown) => [1,2,3].includes(stage as number))))
     || !strings(p.quizAttempts) || !object(p.submissions) || !numbers(p.xpAwards) || !object(p.access)) return false;
   if (!['stage2', 'stage3'].every(name => {
     const gate = p.access[name];
@@ -38,7 +40,7 @@ function validProgress(p: unknown, scope: string): p is ParticipantDemoState {
     if (!['1', '2', '3'].includes(stage) || !object(s) || s.stageOrdinal !== Number(stage)
       || !['draft', 'submitted', 'in_review', 'changes_requested', 'reviewed'].includes(s.status)
       || !['id', 'enrollmentId', 'summary', 'reflection'].every(name => typeof s[name] === 'string')
-      || !strings(s.evidenceLinks) || !s.evidenceLinks.every(isEvidenceLink) || !Array.isArray(s.files)) return false;
+      || !strings(s.evidenceLinks) || (s.status !== 'draft' && !s.evidenceLinks.every(isEvidenceLink)) || !Array.isArray(s.files)) return false;
     if (!s.files.every((file: unknown) => object(file) && ['id', 'name', 'type', 'url'].every(name => typeof file[name] === 'string')
       && typeof file.size === 'number' && file.size >= 0 && file.size <= 20 * 1024 * 1024
       && (file.storageKey === undefined || (typeof file.storageKey === 'string' && file.storageKey.startsWith(`${scope}:`))))) return false;
@@ -56,6 +58,7 @@ export function loadProgress(scope: string): { path: PathCode; progress: Partici
     if (!raw) return fallback;
     const record = JSON.parse(raw);
     if (record.version !== 1 || !['professional', 'social_impact', 'business'].includes(record.path) || !validProgress(record.progress, scope)) throw new Error();
+    record.progress.introducedStages ??= [];
     // Stored URLs are never trusted. Attachments are restored from their scoped IndexedDB keys.
     for (const submission of Object.values(record.progress.submissions) as Submission[]) {
       for (const file of submission.files) file.url = '';

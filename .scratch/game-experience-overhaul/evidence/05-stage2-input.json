@@ -1,0 +1,23 @@
+{
+  "stage": 2,
+  "wallY": 1684.1900999999991,
+  "wallBoundary": 1684,
+  "touch": 5,
+  "initial": {
+    "x": 900,
+    "y": 1710
+  },
+  "moved": {
+    "x": 942.9210000000002,
+    "y": 1710
+  },
+  "paused": {
+    "x": 942.9210000000002,
+    "y": 1710
+  },
+  "resumed": {
+    "x": 976.7920285714289,
+    "y": 1710
+  },
+  "result": "Touch movement and paused input passed"
+}

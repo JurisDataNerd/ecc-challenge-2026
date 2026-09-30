@@ -53,3 +53,12 @@ assert.equal(touchesTerrain(3, 2, { x: 850, y: 1020 }, water, 1024, 1024), true)
 assert.equal(touchesTerrain(3, 2, { x: 850, y: 1070 }, water, 1024, 1024), false); // Rendered footbridge.
 console.log('Movement, paused input, and collision boundaries passed');
 
+// Draft links remain editable text; submitted evidence must be a safe external URL.
+const draft = structuredClone(INITIAL_PARTICIPANT_DEMO);
+draft.submissions[1] = { id:'s',enrollmentId:'demo',stageOrdinal:1,status:'draft',summary:'Draft',reflection:'',evidenceLinks:['unfinished link'],files:[] };
+assert.equal(saveProgress('draft-check','professional',draft),null);
+assert.equal(loadProgress('draft-check').progress.submissions[1].evidenceLinks[0],'unfinished link');
+draft.submissions[1].status='submitted';
+assert.ok(saveProgress('submitted-check','professional',draft));
+assert.deepEqual(loadProgress('demo').progress.introducedStages,[]);
+console.log('Draft and first-entry migration checks passed');

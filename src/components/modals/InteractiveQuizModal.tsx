@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle, Circle, XCircle } from '@phosphor-icons/react';
 import type { PathCode, QuizQuestion } from '../../types';
+import { JourneyDialog } from '../ui/JourneyDialog';
 import { trackLabel } from '../../data/participantStages';
 
 export function InteractiveQuizModal({
@@ -11,7 +12,6 @@ export function InteractiveQuizModal({
   readOnly = false,
   onClose,
   onSubmit,
-  onCorrect,
 }: {
   quiz: QuizQuestion | null;
   currentPath?: PathCode;
@@ -20,7 +20,6 @@ export function InteractiveQuizModal({
   readOnly?: boolean;
   onClose: () => void;
   onSubmit: (quizId: string) => void;
-  onCorrect?: (quizId: string) => void;
 }) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -33,12 +32,10 @@ export function InteractiveQuizModal({
     setSubmitted(true);
     setEarnedXp(current => current || !alreadyAttempted);
     onSubmit(quiz.id);
-    if (selected.isCorrect) onCorrect?.(quiz.id);
   };
 
   return (
-    <div className="journey-scrim" onMouseDown={onClose}>
-      <section className="journey-dialog quiz-dialog" role="dialog" aria-modal="true" aria-labelledby="quiz-title" onMouseDown={event => event.stopPropagation()}>
+    <JourneyDialog titleId="quiz-title" className="quiz-dialog" onClose={onClose}>
         <header className="dialog-heading">
           <div><span className="eyebrow">L{quiz.stageOrdinal} · QUIZ <i>DEMO</i></span><h2 id="quiz-title">{quiz.title}</h2></div>
           <button className="icon-button" onClick={onClose} aria-label="Tutup kuis"><XCircle size={22} /></button>
@@ -59,7 +56,7 @@ export function InteractiveQuizModal({
                 onClick={() => !readOnly && setSelectedOptionId(option.id)}
                 role="radio"
                 aria-checked={chosen}
-                disabled={readOnly}
+                disabled={readOnly || submitted}
               >
                 {correctResult ? <CheckCircle size={20} weight="fill" /> : wrongResult ? <XCircle size={20} weight="fill" /> : chosen ? <CheckCircle size={20} /> : <Circle size={20} />}
                 <span>{option.text}</span>
@@ -89,7 +86,6 @@ export function InteractiveQuizModal({
             )}
           </div>
         </footer>
-      </section>
-    </div>
+    </JourneyDialog>
   );
 }

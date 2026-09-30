@@ -1,6 +1,6 @@
 # Verify the complete game experience
 
-Status: ready-for-agent
+Status: claimed
 Blocked by: 02, 03, 04, 05
 Spec: ../spec.md
 

@@ -1,6 +1,7 @@
 // Run: $env:FQ_BROWSER_CDP = (npx agent-browser get cdp-url --json | ConvertFrom-Json).data.cdpUrl; bun scripts/check-game-browser.mjs
 // Uses the browser already opened by agent-browser. No separate browser or automation dependency.
 import assert from 'node:assert/strict';
+import { mkdir, writeFile } from 'node:fs/promises';
 const url = process.env.FQ_BROWSER_CDP;
 if (!url?.startsWith('ws://127.0.0.1:')) throw new Error('Supply the local agent-browser CDP URL in FQ_BROWSER_CDP');
 const socket = new WebSocket(url);
@@ -32,6 +33,8 @@ try {
     return response.result.value;
   };
   await evalPage(`new Promise((resolve,reject)=>{const start=performance.now();const check=()=>{if(document.querySelector('.phaser-mount')?.__game?.scene?.getScenes(true)[0]?.player)resolve(true);else if(performance.now()-start>10000)reject(new Error('Scene did not load'));else requestAnimationFrame(check);};check();})`);
+  await evalPage(`document.querySelector(".stage-intro-dialog .button-gold")?.click();true`);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
   const stage = await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].stage.ordinal`);
   const wall = { 1: { x:780, y:1000, minY:980 }, 2: { x:600, y:1700, minY:1684 }, 3: { x:1088, y:1256, minY:1232 } }[stage];
   await evalPage(`document.activeElement?.blur();document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.setPosition(${wall.x},${wall.y});true`);
@@ -43,6 +46,11 @@ try {
   await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }, sessionId);
   await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true }, sessionId);
   await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await evalPage(`(()=>{const scene=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0];scene.player.setPosition(scene.stage.spawn.x,scene.stage.spawn.y);return true;})()`);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await mkdir('.scratch/game-experience-overhaul/evidence', {recursive:true});
+  const screenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-touch-hud.png`,Buffer.from(screenshot.data,'base64'));
   const geometry = await evalPage(`(() => {const r=document.querySelector('.virtual-stick').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,width:r.width,touch:navigator.maxTouchPoints};})()`);
   assert.ok(geometry.width > 0 && geometry.touch > 0, 'Actual touch emulation must expose the joystick');
   const position = () => evalPage(`(()=>{const p=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player;return {x:p.x,y:p.y};})()`);
@@ -54,7 +62,8 @@ try {
   await evalPage('new Promise(resolve=>setTimeout(resolve,250))');
   const moved = await position();
   assert.ok(moved.x > initial.x + 10, 'Touch joystick must move the player');
-  await evalPage(`dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);
+  await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
   await evalPage('new Promise(resolve=>setTimeout(resolve,80))');
   const paused = await position();
   await touch('touchMove', [{ ...finger, x: geometry.x + 36 }]);
@@ -62,7 +71,8 @@ try {
   assert.deepEqual(await position(), paused, 'Held/moved touch input must stop while paused');
   await touch('touchEnd', []);
   assert.equal(await evalPage(`!!document.querySelector('#pause-title')`), true);
-  await evalPage(`dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);
+  await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
   await evalPage('new Promise(resolve=>setTimeout(resolve,80))');
   await touch('touchStart', [finger]);
   await touch('touchMove', [{ ...finger, x: geometry.x + 36 }]);
@@ -70,7 +80,18 @@ try {
   await touch('touchEnd', []);
   const resumed = await position();
   assert.ok(resumed.x > paused.x + 10, 'Touch movement must resume after closing pause');
-  console.log(JSON.stringify({ stage, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, result: 'Touch movement and paused input passed' }, null, 2));
+  await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true},sessionId);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const portrait = await evalPage(`(()=>{const note=document.querySelector('.orientation-note');const back=document.querySelector('.stage-return').getBoundingClientRect();return {visible:getComputedStyle(note).display!=='none',backVisible:back.top>=0&&back.bottom<=innerHeight};})()`);
+  assert.ok(portrait.visible && portrait.backVisible, 'Portrait guidance and expedition return must stay available');
+  const beforePortraitInput=await position();
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'w',code:'KeyW',windowsVirtualKeyCode:87},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,150))');
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'w',code:'KeyW',windowsVirtualKeyCode:87},sessionId);
+  assert.deepEqual(await position(),beforePortraitInput,'Portrait guidance must block game movement');
+  const portraitScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-portrait.png`,Buffer.from(portraitScreenshot.data,'base64'));
+  console.log(JSON.stringify({ stage, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, portrait, result: 'Keyboard collision, actual touch, pause/resume, and portrait passed' }, null, 2));
   await send('Emulation.setTouchEmulationEnabled', { enabled: false }, sessionId);
   await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId);
 } finally { socket.close(); }

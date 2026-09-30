@@ -6,6 +6,7 @@ import { OFFICIAL_PATHS, STAGE_BOSS_MISSIONS, STAGE_QUIZZES, TRACK_STAGE_FOCUS }
 import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, type DemoAccessState, type ParticipantStage, type StageOrdinal, type StageGate } from '../../data/participantStages';
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
+import { JourneyDialog } from '../ui/JourneyDialog';
 import { GameWorld } from '../../ui/game-world';
 
 import type { ParticipantDemoState } from '../../lib/progress';
@@ -21,6 +22,7 @@ export function ParticipantJourney({
   allowStaffDemo = true,
   onNavigate,
   storageScope,
+  storageError,
 }: {
   currentPath: PathCode;
   currentRole: UserRole;
@@ -32,15 +34,11 @@ export function ParticipantJourney({
   allowStaffDemo?: boolean;
   onNavigate: (screen: ParticipantDemoState['screen']) => void;
   storageScope: string;
+  storageError: string | null;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
   const [pauseOpen, setPauseOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !event.repeat && pauseOpen) setPauseOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pauseOpen]);
   const [boardOpen, setBoardOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
   const [activeMission, setActiveMission] = useState<(typeof STAGE_BOSS_MISSIONS)[number] | null>(null);
@@ -48,6 +46,15 @@ export function ParticipantJourney({
   const totalXp = useMemo(() => Object.values(demo.xpAwards).reduce((sum, amount) => sum + amount, 0), [demo.xpAwards]);
   const activeStage = PARTICIPANT_STAGES.find(stage => stage.ordinal === demo.currentStage) || PARTICIPANT_STAGES[0];
   const activeGate = getStageAccess(activeStage.ordinal, demo.access);
+  const introOpen = demo.screen === 'stage' && !demo.introducedStages.includes(activeStage.ordinal);
+  const beginStage = () => setDemo(current => ({ ...current, introducedStages: current.introducedStages.includes(activeStage.ordinal) ? current.introducedStages : [...current.introducedStages, activeStage.ordinal] }));
+  const nextQuiz = STAGE_QUIZZES.find(quiz => quiz.stageOrdinal === activeStage.ordinal && !demo.quizAttempts.includes(quiz.id));
+  const submission = demo.submissions[activeStage.ordinal];
+  const objective = nextQuiz ? `Kerjakan kuis: ${nextQuiz.title}`
+    : (submission?.status === 'changes_requested' || (submission?.status === 'draft' && submission.review?.decision === 'changes_requested')) ? 'Revisi misi mengikuti masukan mentor.'
+    : ['submitted', 'in_review'].includes(submission?.status || '') ? 'Kiriman tersimpan. Tunggu hasil review mentor.'
+    : submission?.status === 'reviewed' ? 'Stage selesai. Pilih stage berikutnya di peta ekspedisi.'
+    : `Selesaikan misi: ${STAGE_BOSS_MISSIONS[activeStage.ordinal].title}`;
   const openBoard = useCallback(() => setBoardOpen(true), []);
 
 
@@ -68,10 +75,10 @@ export function ParticipantJourney({
     };
   });
 
-  const saveMission = (submission: Submission) => setDemo(current => ({
+  const saveMission = useCallback((submission: Submission) => setDemo(current => ({
     ...current,
     submissions: { ...current.submissions, [submission.stageOrdinal]: submission },
-  }));
+  })), [setDemo]);
 
   const updateGate = (ordinal: 2 | 3, patch: Partial<StageGate>) => setDemo(current => ({
     ...current,
@@ -84,7 +91,7 @@ export function ParticipantJourney({
   const toggleView = (screen: ParticipantDemoState['screen']) => onNavigate(screen);
 
   return (
-    <div className="participant-shell">
+    <div className={`participant-shell ${demo.screen === "stage" ? "is-playing" : ""}`}>
       <header className="participant-topbar">
         <div className="brand-mark" aria-hidden="true">FQ</div>
         <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
@@ -103,12 +110,22 @@ export function ParticipantJourney({
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
             <header className="stage-toolbar">
-              <button className="button button-quiet" onClick={() => toggleView('expedition')}><ArrowLeft size={17} /> Kembali ke Peta Ekspedisi</button>
-              <div className="stage-toolbar-title"><button className="button button-quiet" onClick={openPause}>Jeda</button><span>{activeStage.phase} · {activeStage.name}</span><small>{trackLabel(currentPath)} · Individual</small></div>
-              <button className="button button-quiet" onClick={() => toggleView('passport')}><BookOpenText size={17} /> Future Passport</button>
+              <button className="button button-quiet stage-return" onClick={() => toggleView('expedition')}><ArrowLeft size={18} /><span>Peta ekspedisi</span></button>
+              <div className="stage-toolbar-title"><strong>{activeStage.phase} {activeStage.name}</strong><small>{trackLabel(currentPath)}</small></div>
+              <div className="stage-actions"><button className="button button-quiet" onClick={() => toggleView('passport')} aria-label="Buka Future Passport"><BookOpenText size={18} /><span>Passport</span></button><button className="button button-quiet" onClick={openPause}>Jeda <kbd>Esc</kbd></button></div>
             </header>
-            <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} paused={pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
-            {pauseOpen && <div className="journey-scrim"><section className="journey-dialog" role="dialog" aria-modal="true" aria-labelledby="pause-title"><h2 id="pause-title">Permainan dijeda</h2><p>Gerak dengan WASD atau tombol panah. Tekan E di dekat papan misi. Escape membuka atau menutup jeda.</p><p>Di ponsel, gunakan joystick dan tombol interaksi.</p><div className="dialog-actions"><button className="button button-gold" onClick={() => setPauseOpen(false)}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => { setPauseOpen(false); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></div></section></div>}
+            <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} objective={objective} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
+            {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
+              <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
+              <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada dekat titik awal. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
+              <ControlsGuide />
+              <footer className="dialog-actions"><span className="demo-note">Progres belajar disimpan sebagai simulasi di browser ini.</span><button className="button button-gold" onClick={beginStage}>Mulai menjelajah</button></footer>
+            </JourneyDialog>}
+            {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={() => setPauseOpen(false)}>
+              <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">Permainan dijeda</h2><p>{objective}</p><ControlsGuide />
+              <p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName}. Kamu bisa kembali ke peta kapan pun untuk berpindah stage.</p>
+              <footer className="pause-actions"><button className="button button-gold" onClick={() => setPauseOpen(false)}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => { setPauseOpen(false); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
+            </JourneyDialog>}
             <QuestBoard
               isOpen={boardOpen}
               stage={activeStage}
@@ -129,12 +146,12 @@ export function ParticipantJourney({
               readOnly={activeGate.readOnly}
               onClose={() => { setActiveQuiz(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
               onSubmit={markQuizAttempt}
-              onCorrect={() => undefined}
             />
             <BossMissionModal
               key={activeMission?.id || 'no-mission'}
               mission={activeMission}
               storageScope={storageScope}
+              saveError={storageError}
               currentSubmission={demo.submissions[activeStage.ordinal]}
               currentPath={currentPath}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
@@ -327,18 +344,16 @@ function QuestBoard({ isOpen, stage, currentPath, readOnly, quizAttempts, submis
   if (!isOpen) return null;
   const quizzes = STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === stage.ordinal);
   const mission = STAGE_BOSS_MISSIONS[stage.ordinal];
-  return <div className="journey-scrim" onMouseDown={onClose}>
-    <section className="journey-dialog board-dialog" role="dialog" aria-modal="true" aria-labelledby="board-title" onMouseDown={event => event.stopPropagation()}>
+  return <JourneyDialog titleId="board-title" className="board-dialog" onClose={onClose}>
       <header className="dialog-heading"><div><span className="eyebrow">{stage.phase} · PAPAN QUEST <i>DEMO</i></span><h2 id="board-title">{stage.boardName}</h2></div><button className="icon-button" onClick={onClose} aria-label="Tutup papan quest"><XCircle size={22} /></button></header>
       <p className="dialog-context"><strong>{trackLabel(currentPath)}:</strong> {TRACK_STAGE_FOCUS[currentPath][stage.ordinal]}</p>
       {readOnly && <div className="read-only-note">Stage sebelumnya tetap bisa dilihat setelah hasil tidak maju. Pengiriman baru ditutup.</div>}
       <div className="quest-board-list">
         {quizzes.map(quiz => <article className="quest-board-row" key={quiz.id}><span className="quest-type">QUIZ</span><div><strong>{quiz.title}</strong><small>{readOnly ? 'Mode lihat · tidak ada XP baru' : quizAttempts.includes(quiz.id) ? 'Percobaan tercatat · +10 XP hanya sekali' : 'Kirim satu jawaban · +10 XP percobaan pertama'}</small></div><button className="button button-outline" onClick={() => onSelectQuiz(quiz)}>{readOnly ? 'Lihat' : quizAttempts.includes(quiz.id) ? 'Ulangi' : 'Mulai'} <ArrowRight size={15} /></button></article>)}
-        {mission && <article className="quest-board-row"><span className="quest-type mission-type">MISI</span><div><strong>{mission.title}</strong><small>{readOnly ? `${missionState(submission)} · mode lihat` : `${missionState(submission)} · +20 XP setelah review diterima`}</small></div><button className="button button-outline" onClick={() => onSelectMission(mission)}>{readOnly ? 'Lihat' : submission?.status === 'changes_requested' ? 'Revisi' : submission ? 'Lihat kiriman' : 'Buka misi'} <ArrowRight size={15} /></button></article>}
+        {mission && <article className="quest-board-row"><span className="quest-type mission-type">MISI</span><div><strong>{mission.title}</strong><small>{readOnly ? `${missionState(submission)} · mode lihat` : `${missionState(submission)} · +20 XP setelah review diterima`}</small></div><button className="button button-outline" onClick={() => onSelectMission(mission)}>{readOnly ? 'Lihat' : submission?.status === 'changes_requested' ? 'Revisi' : submission?.status === 'draft' ? 'Lanjutkan draft' : submission?.status === 'reviewed' ? 'Lihat hasil' : submission ? 'Lihat kiriman' : 'Buka misi'} <ArrowRight size={15} /></button></article>}
       </div>
       <footer className="dialog-actions"><span className="demo-note">Percobaan, review, dan XP adalah simulasi lokal</span><button className="button button-quiet" onClick={onClose}>Kembali ke scene</button></footer>
-    </section>
-  </div>;
+  </JourneyDialog>;
 }
 
 function missionState(submission?: Submission) {
@@ -359,4 +374,8 @@ function lockMessage(reason: ReturnType<typeof getStageAccess>['reason']) {
   if (reason === 'schedule-pending') return 'Menunggu jadwal pembukaan demo';
   if (reason === 'previous-stage-locked') return 'Hasil stage sebelumnya belum memenuhi gate demo';
   return 'Menunggu hasil seleksi demo dipublikasikan';
+}
+
+function ControlsGuide() {
+  return <div className="controls-guide"><div><kbd>W A S D</kbd><span>atau tombol panah untuk bergerak</span></div><div><kbd>E</kbd><span>interaksi di dekat papan misi</span></div><div><kbd>Esc</kbd><span>jeda dan lanjutkan permainan</span></div><p>Di ponsel: gunakan joystick di kiri dan tombol interaksi di kanan. Mainkan dalam posisi lanskap.</p></div>;
 }

@@ -6,17 +6,20 @@ import type { StageBoard } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause }: {
+export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objective }: {
   stage: ParticipantStage;
   readOnly: boolean;
   paused: boolean;
   onOpenBoard: () => void;
   onPause: () => void;
+  objective: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ interact: () => void } | null>(null);
+  const [portrait, setPortrait] = useState(() => matchMedia('(pointer:coarse) and (orientation:portrait)').matches);
+  useEffect(() => { const media=matchMedia('(pointer:coarse) and (orientation:portrait)');const change=()=>setPortrait(media.matches);media.addEventListener('change',change);return()=>media.removeEventListener('change',change); }, []);
   const pausedRef = useRef(paused);
-  pausedRef.current = paused;
+  pausedRef.current = paused || portrait;
   const movementRef = useRef<Movement>({ x: 0, y: 0 });
   const keyboardMovementRef = useRef<Movement>({ x: 0, y: 0 });
   const pointerIdRef = useRef<number | null>(null);
@@ -87,7 +90,7 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause }: {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
       if (event.key === 'Escape' && !event.repeat && !pausedRef.current) { event.preventDefault(); onPause(); return; }
-      if (paused || (target instanceof HTMLElement && target.closest('button,a,input,textarea,select,[contenteditable="true"]'))) return;
+      if (pausedRef.current || (target instanceof HTMLElement && target.closest('input,textarea,select,dialog,[contenteditable="true"]'))) return;
       const key = event.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
         if (key.startsWith('arrow')) event.preventDefault();
@@ -115,9 +118,9 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause }: {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', clearMovement);
     };
-  }, [paused, onPause, endMovement]);
+  }, [paused, portrait, onPause, endMovement]);
 
-  useEffect(() => { if (paused) endMovement(); }, [paused, endMovement]);
+  useEffect(() => { if (paused || portrait) endMovement(); }, [paused, portrait, endMovement]);
 
   const startMovement = (event: React.PointerEvent<HTMLDivElement>) => {
     if (pausedRef.current) return;
@@ -132,17 +135,16 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause }: {
   };
 
   return (
-    <section className="game-viewport" aria-label={`${stage.phase} ${stage.name} scene`}>
+    <section className="game-viewport" tabIndex={0} aria-label={`${stage.phase} ${stage.name} scene`}>
       <div className="phaser-mount" ref={mountRef} aria-label={`${stage.name} game map`} />
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
-      <div className="world-corner-note">
-        <span className="world-dot" />{readOnly ? 'READ-ONLY DEMO' : 'SOLO EXPLORATION'}
-      </div>
+<div className="world-objective"><span>{readOnly ? "Mode lihat" : "Langkah berikutnya"}</span><strong>{objective}</strong><small>Tugas tersedia di {stage.boardName}</small></div>
 
-      <div className="orientation-note" role="status">Putar perangkat ke posisi lanskap untuk menjelajah</div>
+      <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Gunakan tombol Peta untuk kembali memilih stage.</p></div>
       <div
         className="virtual-stick"
         role="group"
+        aria-disabled={paused}
         aria-label="Kontrol gerak. Gunakan tombol panah atau WASD di komputer."
         onPointerDown={startMovement}
         onPointerMove={movePointer}
