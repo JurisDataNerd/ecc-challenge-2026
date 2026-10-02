@@ -66,7 +66,7 @@ export const PixelModalFrame: React.FC<PixelModalFrameProps> = ({
               <div className="flex items-center gap-2">
                 {badge && (
                   <span 
-                    className="font-pixel text-[9px] uppercase px-2 py-0.5 border shadow-[1px_1px_0_#000]"
+                    className="font-rpg text-xs font-bold uppercase px-2 py-0.5 border shadow-[1px_1px_0_#000]"
                     style={{ 
                       backgroundColor: `${badgeColor}25`, 
                       borderColor: badgeColor,
@@ -81,7 +81,7 @@ export const PixelModalFrame: React.FC<PixelModalFrameProps> = ({
                 {title}
               </h2>
               {subtitle && (
-                <p className="text-[11px] font-mono text-slate-300 line-clamp-1 mt-0.5">
+                <p className="text-[11px] font-sans text-slate-300 line-clamp-1 mt-0.5">
                   {subtitle}
                 </p>
               )}
@@ -95,7 +95,7 @@ export const PixelModalFrame: React.FC<PixelModalFrameProps> = ({
             className="rpg-btn rpg-btn-crimson px-2.5 py-1 text-xs flex items-center gap-1 cursor-pointer"
           >
             <X size={14} weight="bold" />
-            <span className="font-pixel text-[9px]">ESC</span>
+            <span className="font-rpg text-xs font-bold">ESC</span>
           </button>
         </div>
 
