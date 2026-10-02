@@ -201,7 +201,7 @@ export const CraftpixCultistBattleSprite: React.FC<{ stageOrdinal: number; size?
       style={{ width: size, height: size }}
     >
       <div 
-        className="w-8 h-8 scale-[3.8] origin-center animate-pulse"
+        className="w-8 h-8 scale-[3.8] origin-center"
         style={{
           backgroundImage: `url('/assets/dungeon/Cultist${cultistIdx}_Idle.png')`,
           backgroundPosition: '0px 0px',

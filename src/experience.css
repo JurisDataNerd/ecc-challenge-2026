@@ -204,6 +204,23 @@ kbd { display:inline-block; font:600 12px/1.3 'Geist',sans-serif; padding:3px 6p
 .journey-dialog .mission-deliverables strong { font:600 14px/1.5 'Geist',sans-serif; text-transform:none; }
 .journey-dialog :is(.quiz-scenario p,.mission-instructions) { color:#53696f; font-size:14px; }
 .journey-dialog .quiz-question { color:#163943; font-size:18px; line-height:1.5; margin:20px 0 14px; }
+.quiz-battle { position:relative; display:flex; justify-content:space-between; align-items:end; min-height:166px; margin:0 0 12px; padding:12px 22px 26px; overflow:hidden; border:1px solid #a8b8ae; border-radius:6px; background:linear-gradient(#10261c33,#10261c77),url('/assets/dungeon/custom_battle_bg.png') center/cover; color:#fff; }
+.quiz-combatant { display:grid; justify-items:center; width:130px; position:relative; z-index:1; transition:transform .35s cubic-bezier(.23,1,.32,1),opacity .35s ease-out; }
+.quiz-combatant>span { max-width:130px; padding:2px 7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-radius:3px; background:#15302ad9; font:600 12px 'Geist',sans-serif; }
+.quiz-health { width:100px; height:7px; margin:5px 0 1px; border:1px solid #fff9; background:#17252b; }
+.quiz-health i { display:block; height:100%; background:#77c899; transition:width .3s ease-out; }
+.quiz-enemy .quiz-health i { background:#d88369; }
+.quiz-battle-caption { position:absolute; left:0; right:0; bottom:0; z-index:2; min-height:27px; padding:4px 10px; background:#17312be8; text-align:center; font:500 12px/19px 'Geist',sans-serif; }
+.quiz-battle-result { position:absolute; top:48%; left:50%; z-index:2; transform:translate(-50%,-50%) scale(.8); opacity:0; color:#fff; font:700 22px 'Geist',sans-serif; text-shadow:0 2px 8px #000; pointer-events:none; }
+.quiz-battle-slash { position:absolute; top:53%; left:42%; z-index:2; width:110px; height:5px; transform:rotate(-45deg); background:#fff; box-shadow:0 0 12px 4px #eec871; animation:quiz-slash .65s ease-out both; pointer-events:none; }
+.quiz-battle.is-victory .quiz-hero { transform:translateX(-65px) scale(1.1); }
+.quiz-battle.is-counterattack .quiz-enemy { transform:translateX(65px) scale(1.1); }
+.quiz-battle:is(.is-victory,.is-counterattack) .quiz-battle-result { animation:quiz-result .65s ease-out both; }
+.quiz-battle.is-defeated .quiz-enemy { transform:scale(.85); filter:grayscale(1); }
+@keyframes quiz-result { 45% { opacity:1; transform:translate(-50%,-50%) scale(1.1); } 100% { opacity:0; transform:translate(-50%,-65%) scale(1); } }
+@keyframes quiz-slash { 0%,25% { opacity:0; scale:.5; } 50% { opacity:1; scale:1; } 100% { opacity:0; scale:1.2; } }
+@media(max-width:480px) { .quiz-battle { padding-inline:6px; min-height:156px; } .quiz-combatant { width:105px; } .quiz-battle.is-victory .quiz-hero { transform:translateX(-25px) scale(1.06); } .quiz-battle.is-counterattack .quiz-enemy { transform:translateX(25px) scale(1.06); } }
+@media(prefers-reduced-motion:reduce) { .quiz-battle *, .quiz-battle-result { animation:none!important; transition:none!important; } .quiz-battle:is(.is-victory,.is-counterattack) .quiz-battle-result { opacity:1; } }
 .journey-dialog .quiz-option { border-color:#ccdcd4; background:#fff; color:#163943; font-size:14px; padding:14px; border-radius:6px; }
 .journey-dialog .quiz-option:hover:not(:disabled) { background:#f5f8f6; border-color:#446c4e; }
 .journey-dialog .quiz-option.is-selected { background:#edf3ea; border-color:#446c4e; }

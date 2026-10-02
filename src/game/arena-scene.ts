@@ -4,12 +4,8 @@ import type { ParticipantStage, StageOrdinal } from '../data/participantStages';
 
 export type StageBoard = { id: StageOrdinal; name: string; locked: boolean };
 type Movement = { x: number; y: number };
-type Facing = 'Back' | 'Front' | 'Left' | 'Right';
 const MAP_SIZE = 640;
 const BOARD_RADIUS = 100;
-const CHARACTER_PATH = '/assets/mixel/MainCharacter%20v.1.0';
-
-const facings: Facing[] = ['Back', 'Front', 'Left', 'Right'];
 
 export class ArenaScene extends Phaser.Scene {
   private player: Phaser.GameObjects.Sprite | null = null;
@@ -17,7 +13,6 @@ export class ArenaScene extends Phaser.Scene {
   private mapPixels: Uint8ClampedArray | null = null;
   private mapWidth = MAP_SIZE;
   private mapHeight = MAP_SIZE;
-  private facing: Facing = 'Front';
   private nearbyBoard: StageBoard | null = null;
 
   constructor(
@@ -32,11 +27,8 @@ export class ArenaScene extends Phaser.Scene {
 
   preload() {
     this.load.image('world-map', this.stage.mapPath);
-    this.load.image('player-shadow', `${CHARACTER_PATH}/MainC_Shadow.png`);
-    for (const facing of facings) {
-      this.load.spritesheet(`idle-${facing}`, `${CHARACTER_PATH}/MainC_Idle_${facing}.PNG`, { frameWidth: 32, frameHeight: 33 });
-      this.load.spritesheet(`walk-${facing}`, `${CHARACTER_PATH}/MainC_Walk_${facing}.PNG`, { frameWidth: 32, frameHeight: 33 });
-    }
+    this.load.image('player-shadow', '/assets/mixel/MainCharacter%20v.1.0/MainC_Shadow.png');
+    this.load.spritesheet('knight', '/assets/dungeon/hero_knight_spritesheet.png', { frameWidth: 48, frameHeight: 48 });
   }
 
   create() {
@@ -74,11 +66,11 @@ export class ArenaScene extends Phaser.Scene {
     const input = this.readMovement();
     const {x,y}=input;
     if (Math.hypot(x,y)>0.08) {
-      this.facing = Math.abs(x)>Math.abs(y) ? (x<0?'Left':'Right') : (y<0?'Back':'Front');
       const next=movePlayer(this.player,input,delta,this.stage.worldSize,point => touchesTerrain(this.stage.ordinal,this.stage.mapScale,point,this.mapPixels,this.mapWidth,this.mapHeight));
       const moved=next.x!==this.player.x || next.y!==this.player.y;
-      this.player.setPosition(next.x,next.y).anims.play(`${moved?'walk':'idle'}-${this.facing}`,true);
-    } else this.player.anims.play(`idle-${this.facing}`,true);
+      this.player.setPosition(next.x,next.y).anims.play(moved?'knight-walk':'knight-idle',true);
+      if (x) this.player.setFlipX(x<0);
+    } else this.player.anims.play('knight-idle',true);
 
     this.player.setDepth(this.player.y);
     this.shadow?.setPosition(this.player.x, this.player.y - 4).setDepth(this.player.y - 1);
@@ -98,7 +90,7 @@ export class ArenaScene extends Phaser.Scene {
   private spawnPlayer() {
     const { x, y } = this.stage.spawn;
     this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(54, 34).setAlpha(0.8).setDepth(y - 1);
-    this.player = this.add.sprite(x, y, 'idle-Front').setOrigin(0.5, 1).setScale(2).setDepth(y).play('idle-Front');
+    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.4).setDepth(y).play('knight-idle');
     const updateCamera = () => this.cameras.main.setZoom(Math.max(this.scale.width < 768 || this.scale.height < 480 ? 0.8 : 1, this.scale.width/this.stage.worldSize, this.scale.height/this.stage.worldSize));
     this.cameras.main.roundPixels = true;
     this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12, 0, 32);
@@ -146,10 +138,8 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private createAnimations() {
-    for (const facing of facings) {
-      this.anims.create({ key: `idle-${facing}`, frames: this.anims.generateFrameNumbers(`idle-${facing}`, { start: 0, end: 8 }), frameRate: 5, repeat: -1 });
-      this.anims.create({ key: `walk-${facing}`, frames: this.anims.generateFrameNumbers(`walk-${facing}`, { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
-    }
+    this.anims.create({ key: 'knight-idle', frames: this.anims.generateFrameNumbers('knight', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'knight-walk', frames: this.anims.generateFrameNumbers('knight', { start: 4, end: 7 }), frameRate: 8, repeat: -1 });
   }
 
   private drawBoard() {

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { CheckCircle, Circle, XCircle } from '@phosphor-icons/react';
 import type { PathCode, QuizQuestion } from '../../types';
 import { JourneyDialog } from '../ui/JourneyDialog';
 import { trackLabel } from '../../data/participantStages';
+import { CraftpixCultistBattleSprite, HeroBattleSprite } from '../game/BattleSprites';
 
 export function InteractiveQuizModal({
   quiz,
@@ -24,12 +26,30 @@ export function InteractiveQuizModal({
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [earnedXp, setEarnedXp] = useState(false);
+  const [battlePhase, setBattlePhase] = useState<'idle' | 'attack' | 'result'>('idle');
+  const [playerHp, setPlayerHp] = useState(100);
+
+  useEffect(() => {
+    if (battlePhase !== 'attack') return;
+    const timer = window.setTimeout(() => {
+      const correct = quiz?.options.find(option => option.id === selectedOptionId)?.isCorrect;
+      if (!correct) {
+        setPlayerHp(hp => Math.max(15, hp - 25));
+      } else if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.4 } });
+      }
+      setBattlePhase('result');
+      setSubmitted(true);
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [battlePhase, quiz, selectedOptionId]);
 
   if (!quiz) return null;
   const selected = quiz.options.find(option => option.id === selectedOptionId);
   const submitAnswer = () => {
     if (!selected || readOnly) return;
-    setSubmitted(true);
+    if (battlePhase === 'attack') return;
+    setBattlePhase('attack');
     setEarnedXp(current => current || !alreadyAttempted);
     onSubmit(quiz.id);
   };
@@ -41,6 +61,13 @@ export function InteractiveQuizModal({
           <button className="icon-button" onClick={onClose} aria-label="Tutup kuis"><XCircle size={22} /></button>
         </header>
         <p className="dialog-context"><strong>{trackLabel(currentPath)}:</strong> {trackFocus}</p>
+        {!readOnly && <div className={`quiz-battle ${battlePhase === 'attack' ? selected?.isCorrect ? 'is-victory' : 'is-counterattack' : ''} ${battlePhase === 'result' && selected?.isCorrect ? 'is-defeated' : ''}`} aria-label={`Adegan kuis: karakter melawan ${quiz.enemyName}`}>
+          <div className="quiz-combatant quiz-enemy"><span>{quiz.enemyName}</span><div className="quiz-health"><i style={{ width: battlePhase === 'result' && selected?.isCorrect ? '0%' : '100%' }} /></div><CraftpixCultistBattleSprite stageOrdinal={quiz.stageOrdinal} size={110} /></div>
+          <strong className="quiz-battle-result" aria-hidden="true">{selected?.isCorrect ? 'Tepat!' : 'Coba lagi!'}</strong>
+          {battlePhase === 'attack' && selected?.isCorrect && <span className="quiz-battle-slash" aria-hidden="true" />}
+          <div className="quiz-combatant quiz-hero"><span>Knight</span><div className="quiz-health"><i style={{ width: `${playerHp}%` }} /></div><HeroBattleSprite pathCode="professional" actionState={battlePhase === 'attack' && selected?.isCorrect ? 'attack' : battlePhase === 'attack' ? 'hit' : 'idle'} size={110} /></div>
+          <div className="quiz-battle-caption" role="status">{battlePhase === 'idle' ? 'Pilih jawaban untuk memulai' : battlePhase === 'attack' ? selected?.isCorrect ? 'Serangan tepat!' : 'Musuh menyerang balik!' : selected?.isCorrect ? 'Musuh berhasil dikalahkan' : 'Pilih jawaban lain untuk mencoba lagi'}</div>
+        </div>}
         <div className="quiz-scenario"><span className="eyebrow">STUDI KASUS</span><p>{quiz.scenario}</p></div>
         <h3 className="quiz-question">{quiz.question}</h3>
         <div className="quiz-options" role="radiogroup" aria-label="Pilih satu jawaban">
@@ -56,7 +83,7 @@ export function InteractiveQuizModal({
                 onClick={() => !readOnly && setSelectedOptionId(option.id)}
                 role="radio"
                 aria-checked={chosen}
-                disabled={readOnly || submitted}
+                disabled={readOnly || submitted || battlePhase === 'attack'}
               >
                 {correctResult ? <CheckCircle size={20} weight="fill" /> : wrongResult ? <XCircle size={20} weight="fill" /> : chosen ? <CheckCircle size={20} /> : <Circle size={20} />}
                 <span>{option.text}</span>
@@ -78,11 +105,11 @@ export function InteractiveQuizModal({
           <div>
             <button className="button button-quiet" onClick={onClose}>{submitted ? 'Selesai' : 'Kembali'}</button>
             {readOnly ? <button className="button button-gold" onClick={onClose}>Tutup tampilan</button> : !submitted ? (
-              <button className="button button-gold" onClick={submitAnswer} disabled={!selected || readOnly}>Kirim jawaban <span>+10 XP</span></button>
+              <button className="button button-gold" onClick={submitAnswer} disabled={!selected || battlePhase === 'attack'}>{battlePhase === 'attack' ? 'Menilai jawaban…' : 'Jawab / serang'} {!alreadyAttempted && !earnedXp && <span>+10 XP</span>}</button>
             ) : selected?.isCorrect ? (
               <button className="button button-gold" onClick={onClose}>Lanjutkan</button>
             ) : (
-              <button className="button button-gold" onClick={() => { setSubmitted(false); setSelectedOptionId(null); }}>Coba jawaban lain <span>tanpa XP ulang</span></button>
+              <button className="button button-gold" onClick={() => { setSubmitted(false); setSelectedOptionId(null); setBattlePhase('idle'); }}>Coba jawaban lain <span>tanpa XP ulang</span></button>
             )}
           </div>
         </footer>
