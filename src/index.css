@@ -210,7 +210,7 @@ canvas {
   font-family: 'Geist', sans-serif;
 }
 .participant-topbar { min-height: 68px; display:flex; align-items:center; gap:12px; padding: 0 28px; border-bottom:1px solid #21374a; background:#081522; z-index:5; }
-.brand-mark { display:grid; place-items:center; width:38px; height:38px; border:1px solid var(--quest-gold); color:var(--quest-gold); font:700 15px 'Pixelify Sans',sans-serif; transform:rotate(-3deg); }
+.brand-mark { display:block; width:38px; height:38px; object-fit:contain; }
 .brand-copy { display:flex; flex-direction:column; gap:1px; }
 .brand-copy span,.eyebrow,.page-kicker,.form-overline,.passport-title,.passport-track>span,.passport-xp>span,.passport-total>span { color:#91a7b8; font:600 10px 'Geist Mono',monospace; letter-spacing:.12em; text-transform:uppercase; }
 .brand-copy strong { color:var(--quest-cream); font:700 15px 'Pixelify Sans',sans-serif; letter-spacing:.07em; }

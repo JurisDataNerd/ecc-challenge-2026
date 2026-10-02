@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Compass, ArrowRight, ArrowLeft, MapTrifold, Hammer, PresentationChart } from '@phosphor-icons/react';
+import { ArrowRight, ArrowLeft, MapTrifold, Hammer, PresentationChart } from '@phosphor-icons/react';
 import { AccountPage, type AccountMode } from './components/AccountPage';
 import { authErrorMessage, useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
@@ -8,7 +8,7 @@ import { navigate, useLocation } from './lib/navigation';
 const ProgramApp = lazy(() => import('./ProgramApp'));
 
 export function Brand() {
-  return <a className="fq-brand" href="/" aria-label="Future Quest, beranda"><Compass size={30} weight="duotone" /><span>Future Quest<small>ECC · SIAP IMPACT 2026</small></span></a>;
+  return <a className="fq-brand" href="/" aria-label="Future Quest, beranda"><img src="/assets/ecc-logo.png" width="38" height="38" alt="" /><span>Future Quest<small>ECC · SIAP IMPACT 2026</small></span></a>;
 }
 
 export default function App() {

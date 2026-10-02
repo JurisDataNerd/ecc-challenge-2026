@@ -117,7 +117,7 @@
 /* The maps carry the visual character; navigation stays quiet and readable. */
 .participant-shell { --quest-panel:#fff; --quest-ink:#163943; --quest-muted:#53696f; background:#f5f8f6; color:#163943; font-family:'Geist',sans-serif; }
 .participant-shell .participant-topbar { background:#f5f8f6; border-color:#ccdcd4; color:#163943; box-shadow:none; }
-.participant-shell .brand-mark { background:#446c4e; color:#fff; border:none; }
+.participant-shell .brand-mark { flex:none; }
 .participant-shell :is(.brand-copy strong,.brand-copy span,.track-chip,.workspace-picker) { color:#163943; }
 .participant-shell :is(.onboarding-layout,.passport-card,.passport-large-card,.passport-stage-list,.rail-note,.access-controls) { border-color:#ccdcd4; box-shadow:none; background:#fff; color:#163943; }
 .participant-shell :is(.expedition-heading h1,.passport-page-heading h1,.onboarding-copy h1) { font:600 clamp(30px,3vw,44px)/1.15 'Geist',sans-serif; letter-spacing:-.025em; color:inherit; text-shadow:none; }
