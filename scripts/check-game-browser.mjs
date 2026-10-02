@@ -1,0 +1,125 @@
+// Run: $env:FQ_BROWSER_CDP = (npx agent-browser get cdp-url --json | ConvertFrom-Json).data.cdpUrl; bun scripts/check-game-browser.mjs
+// Uses the browser already opened by agent-browser. No separate browser or automation dependency.
+import assert from 'node:assert/strict';
+import { mkdir, writeFile } from 'node:fs/promises';
+const url = process.env.FQ_BROWSER_CDP;
+if (!url?.startsWith('ws://127.0.0.1:')) throw new Error('Supply the local agent-browser CDP URL in FQ_BROWSER_CDP');
+const socket = new WebSocket(url);
+await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
+let nextId = 0;
+const pending = new Map();
+socket.onmessage = event => {
+  const result = JSON.parse(event.data);
+  const request = pending.get(result.id);
+  if (!request) return;
+  pending.delete(result.id);
+  if (result.error) request.reject(new Error(result.error.message)); else request.resolve(result.result);
+};
+function send(method, params = {}, sessionId) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextId;
+    pending.set(id, { resolve, reject });
+    socket.send(JSON.stringify({ id, method, params, sessionId }));
+  });
+}
+try {
+  const { targetInfos } = await send('Target.getTargets');
+  const target = targetInfos.find(item => item.type === 'page' && item.url.startsWith('http://localhost:5173/demo/stage/'));
+  assert.ok(target, 'Open a demo stage at localhost:5173 in agent-browser');
+  const { sessionId } = await send('Target.attachToTarget', { targetId: target.targetId, flatten: true });
+  const evalPage = async expression => {
+    const response = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }, sessionId);
+    if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text);
+    return response.result.value;
+  };
+  await evalPage(`new Promise((resolve,reject)=>{const start=performance.now();const check=()=>{if(document.querySelector('.phaser-mount')?.__game?.scene?.getScenes(true)[0]?.player)resolve(true);else if(performance.now()-start>10000)reject(new Error('Scene did not load'));else requestAnimationFrame(check);};check();})`);
+  await evalPage(`document.querySelector(".stage-intro-dialog .button-gold")?.click();true`);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const stage = await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].stage.ordinal`);
+  await send('Emulation.setDeviceMetricsOverride',{width:2560,height:1080,deviceScaleFactor:1,mobile:false},sessionId);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const cameraFit=await evalPage(`(()=>{const s=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0],c=s.cameras.main;return {width:c.width,height:c.height,zoom:c.zoom,world:s.stage.worldSize}})()`);
+  assert.ok(cameraFit.world*cameraFit.zoom>=cameraFit.width && cameraFit.world*cameraFit.zoom>=cameraFit.height,'Wide screens must not expose blank world gutters');
+  if(stage===3){
+    await evalPage(`document.activeElement?.blur();document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.setPosition(1136,192);true`);
+    await send('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+    await evalPage('new Promise(resolve=>setTimeout(resolve,2400))');
+    await send('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+    assert.ok(await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.x>1540`),'Keyboard movement must cross the original rope bridge despite gaps between planks');
+  }
+  const wall = { 1: { x:780, y:1000, minY:980 }, 2: { x:600, y:1700, minY:1684 }, 3: { x:1088, y:1256, minY:1232 } }[stage];
+  await evalPage(`document.activeElement?.blur();document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.setPosition(${wall.x},${wall.y});true`);
+  await send('Input.dispatchKeyEvent', { type:'keyDown', key:'w', code:'KeyW', windowsVirtualKeyCode:87 }, sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,350))');
+  await send('Input.dispatchKeyEvent', { type:'keyUp', key:'w', code:'KeyW', windowsVirtualKeyCode:87 }, sessionId);
+  const wallY = await evalPage(`document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player.y`);
+  assert.ok(wallY >= wall.minY && wallY < wall.y-3, `L${stage} keyboard movement must stop at the visible obstacle: y=${wallY}, boundary=${wall.minY}`);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }, sessionId);
+  await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true }, sessionId);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await evalPage(`(()=>{const scene=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0];scene.player.setPosition(scene.stage.spawn.x,scene.stage.spawn.y);return true;})()`);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await mkdir('.scratch/game-experience-overhaul/evidence', {recursive:true});
+  const screenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-touch-hud.png`,Buffer.from(screenshot.data,'base64'));
+  const geometry = await evalPage(`(() => {const r=document.querySelector('.virtual-stick').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,width:r.width,touch:navigator.maxTouchPoints};})()`);
+  assert.ok(geometry.width > 0 && geometry.touch > 0, 'Actual touch emulation must expose the joystick');
+  const position = () => evalPage(`(()=>{const p=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0].player;return {x:p.x,y:p.y};})()`);
+  const initial = await position();
+  const touch = (type, points) => send('Input.dispatchTouchEvent', { type, touchPoints: points }, sessionId);
+  const finger = { id: 1, x: geometry.x, y: geometry.y, radiusX: 3, radiusY: 3, force: 1 };
+  await touch('touchStart', [finger]);
+  await touch('touchMove', [{ ...finger, x: geometry.x + 36 }]);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,250))');
+  const moved = await position();
+  assert.ok(moved.x > initial.x + 10, 'Touch joystick must move the player');
+  await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,80))');
+  const paused = await position();
+  await touch('touchMove', [{ ...finger, x: geometry.x + 36 }]);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,200))');
+  assert.deepEqual(await position(), paused, 'Held/moved touch input must stop while paused');
+  await touch('touchEnd', []);
+  assert.equal(await evalPage(`!!document.querySelector('#pause-title')`), true);
+  await send('Input.dispatchKeyEvent', {type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent', {type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,80))');
+  await touch('touchStart', [finger]);
+  await touch('touchMove', [{ ...finger, x: geometry.x + 36 }]);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,180))');
+  await touch('touchEnd', []);
+  const resumed = await position();
+  assert.ok(resumed.x > paused.x + 10, 'Touch movement must resume after closing pause');
+  await evalPage(`(()=>{const s=document.querySelector('.phaser-mount').__game.scene.getScenes(true)[0];s.player.setPosition(s.stage.board.x,s.stage.board.y);return true})()`);
+  await evalPage(`new Promise((resolve,reject)=>{const start=performance.now();const check=()=>{if(document.querySelector('.interact-button'))resolve(true);else if(performance.now()-start>5000)reject(new Error('Board action missing'));else requestAnimationFrame(check)};check()})`);
+  const action=await evalPage(`(()=>{const r=document.querySelector('.interact-button').getBoundingClientRect();return {id:2,x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+  await touch('touchStart',[action]);await touch('touchEnd',[]);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const boardLayout=await evalPage(`(()=>{const d=document.querySelector('.board-dialog');if(!d)return null;const r=d.getBoundingClientRect();return {width:r.width,height:r.height,withinViewport:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,overflow:d.scrollWidth>d.clientWidth}})()`);
+  assert.ok(boardLayout?.withinViewport && !boardLayout.overflow,'Touch board action must open a readable landscape dialog');
+  const modalPosition=await position();
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,120))');
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68},sessionId);
+  assert.deepEqual(await position(),modalPosition,'Task dialog must block keyboard movement');
+  const boardScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/06-stage${stage}-touch-board.png`,Buffer.from(boardScreenshot.data,'base64'));
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},sessionId);
+  await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true},sessionId);
+  await evalPage(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  const portrait = await evalPage(`(()=>{const note=document.querySelector('.orientation-note');const back=document.querySelector('.stage-return').getBoundingClientRect();return {visible:getComputedStyle(note).display!=='none',width:note.getBoundingClientRect().width,backVisible:back.top>=0&&back.bottom<=innerHeight};})()`);
+  assert.ok(portrait.visible && portrait.width >= 380 && portrait.backVisible, 'Portrait guidance and expedition return must stay available');
+  const beforePortraitInput=await position();
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'w',code:'KeyW',windowsVirtualKeyCode:87},sessionId);
+  await evalPage('new Promise(resolve=>setTimeout(resolve,150))');
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'w',code:'KeyW',windowsVirtualKeyCode:87},sessionId);
+  assert.deepEqual(await position(),beforePortraitInput,'Portrait guidance must block game movement');
+  const portraitScreenshot=await send('Page.captureScreenshot',{format:'png'},sessionId);
+  await writeFile(`.scratch/game-experience-overhaul/evidence/05-stage${stage}-portrait.png`,Buffer.from(portraitScreenshot.data,'base64'));
+  console.log(JSON.stringify({ stage, cameraFit, wallY, wallBoundary:wall.minY, touch: geometry.touch, initial, moved, paused, resumed, boardLayout, portrait, result: 'Wide camera fit, keyboard collision, actual touch interaction, modal input suppression, pause/resume, and portrait passed' }, null, 2));
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false }, sessionId);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId);
+} finally { socket.close(); }
+
