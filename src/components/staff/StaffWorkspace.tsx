@@ -13,7 +13,7 @@ export function StaffWorkspace({ role, currentPath, submissions, onRoleChange, o
 }) {
   return <div className="participant-shell staff-shell">
     <header className="participant-topbar">
-      <div className="brand-mark" aria-hidden="true">FQ</div>
+      <img className="brand-mark" src="/assets/ecc-logo.png" alt="" />
       <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
       <div className="topbar-spacer" />
       <span className="track-chip"><span />{trackLabel(currentPath)}</span>
