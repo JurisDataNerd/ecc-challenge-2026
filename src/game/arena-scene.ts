@@ -87,8 +87,8 @@ export class ArenaScene extends Phaser.Scene {
 
   private spawnPlayer() {
     const { x, y } = this.stage.spawn;
-    this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(54, 34).setAlpha(0.8).setDepth(y - 1);
-    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.4).setDepth(y).play('knight-idle');
+    this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(68, 40).setAlpha(0.8).setDepth(y - 1);
+    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.85).setDepth(y).play('knight-idle');
     const updateCamera = () => this.cameras.main.setZoom(Math.max(this.scale.width < 768 || this.scale.height < 480 ? 0.8 : 1, this.scale.width/this.stage.worldSize, this.scale.height/this.stage.worldSize));
     this.cameras.main.roundPixels = true;
     this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12, 0, 32);

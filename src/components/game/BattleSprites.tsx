@@ -23,7 +23,7 @@ export const HeroBattleSprite: React.FC<HeroBattleSpriteProps> = ({
 
   // Row 0 = Idle (0px), Row 2 = Attack (-96px)
   const rowY = isAttack ? -96 : 0;
-  const scale = (size / 48) * 1.5;
+  const scale = (size / 48) * 1.85;
 
   return (
     <div 
