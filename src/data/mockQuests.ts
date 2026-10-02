@@ -63,21 +63,26 @@ export const STAGE_CONFIGS = [
   },
 ];
 
-export const TRACK_STAGE_FOCUS: Record<PathCode, Record<1 | 2 | 3, string>> = {
+import type { StageOrdinal } from './participantStages';
+
+export const TRACK_STAGE_FOCUS: Record<PathCode, Record<StageOrdinal, string>> = {
   professional: {
     1: 'Validasi tantangan nyata di tempat kerja atau organisasi melalui bukti langsung.',
     2: 'Rancang prototipe perbaikan praktis dan uji dengan penggunanya.',
-    3: 'Presentasikan solusi yang telah diuji, model operasional, dan rencana 90 hari.'
+    3: 'Presentasikan solusi yang telah diuji, model operasional, dan rencana 90 hari.',
+    4: 'Rayakan kepemimpinan profesional dan komitmen dampak jangka panjang di industri.'
   },
   social_impact: {
     1: 'Validasi kebutuhan komunitas bersama warga yang mengalaminya.',
     2: 'Rancang respons yang inklusif dan uji bersama komunitas.',
-    3: 'Presentasikan bukti, dampak berkelanjutan, dan rencana 90 hari.'
+    3: 'Presentasikan bukti, dampak berkelanjutan, dan rencana 90 hari.',
+    4: 'Rayakan pencapaian advokasi sosial dan manifesto keberlanjutan dampak komunitas.'
   },
   business: {
     1: 'Validasi masalah pelanggan melalui bukti langsung dari pasar.',
     2: 'Rancang solusi pasar dan uji manfaatnya bersama pelanggan.',
-    3: 'Presentasikan traksi, model bisnis, dan rencana 90 hari.'
+    3: 'Presentasikan traksi, model bisnis, dan rencana 90 hari.',
+    4: 'Rayakan validasi wirausaha, komitmen pertumbuhan pasar, dan investasi masa depan.'
   }
 };
 
@@ -306,6 +311,25 @@ export const STAGE_BOSS_MISSIONS: Record<number, BossMission> = {
       { key: 'evidence_quality', label: 'Kualitas Bukti Validasi & Traction', maxScore: 10 },
       { key: 'execution_readiness', label: 'Kesiapan Eksekusi & Roadmap 90 Hari', maxScore: 35 },
       { key: 'deck_professionalism', label: 'Kualitas Penyampaian & Ketajaman Data', maxScore: 25 }
+    ]
+  },
+  4: {
+    id: 'boss-mission-s4',
+    stageOrdinal: 4,
+    bossName: 'The Celestial Herald',
+    bossTitle: 'Penjaga Dampak & Gerbang Kelulusan',
+    title: 'Deklarasi Dampak Akhir & Komitmen Masa Depan',
+    instructions: 'Kirimkan deklarasi dampak akhir dan manifesto komitmen masa depan Anda. Rayakan pencapaian seluruh perjalanan bootcamp Anda di Altar Kayangan.',
+    deliverables: [
+      'Manifesto Dampak & Visi Masa Depan',
+      'Refleksi Komprehensif Perjalanan Ekspedisi',
+      'Rencana Kolaborasi & Dampak Berkelanjutan'
+    ],
+    maxFiles: 2,
+    allowedFormats: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    rubricCriteria: [
+      { key: 'impact_declaration', label: 'Kebermaknaan Dampak & Visi', maxScore: 50 },
+      { key: 'commitment_depth', label: 'Kedalaman Komitmen & Eksekusi', maxScore: 50 }
     ]
   }
 };
