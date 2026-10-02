@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
+import { Pause } from '@phosphor-icons/react';
 import type { ParticipantStage } from '../data/participantStages';
 import { movementInput } from '../game/terrain';
 import type { StageBoard } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objective }: {
+export function GameWorld({ stage, paused, onOpenBoard, onPause }: {
   stage: ParticipantStage;
-  readOnly: boolean;
   paused: boolean;
   onOpenBoard: () => void;
   onPause: () => void;
-  objective: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ interact: () => void } | null>(null);
@@ -138,9 +137,9 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objec
     <section className="game-viewport" tabIndex={0} aria-label={`${stage.phase} ${stage.name} scene`}>
       <div className="phaser-mount" ref={mountRef} aria-label={`${stage.name} game map`} />
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
-<div className="world-objective"><span>{readOnly ? "Mode lihat" : "Langkah berikutnya"}</span><strong>{objective}</strong><small>{stage.boardName} {stage.boardHint}</small></div>
+      <button className="game-pause-button" type="button" aria-label="Jeda permainan" onClick={onPause}><Pause size={22} weight="bold" /></button>
 
-      <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Gunakan tombol panah kembali di bagian atas untuk memilih stage.</p></div>
+      <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Buka Jeda untuk kembali ke peta.</p></div>
       <div
         className="virtual-stick"
         role="group"
@@ -158,12 +157,10 @@ export function GameWorld({ stage, readOnly, paused, onOpenBoard, onPause, objec
       </div>
 
       {nearbyBoard && (
-        <button className="interact-button" disabled={paused} onClick={() => { if (!pausedRef.current) sceneRef.current?.interact(); }}>
-          <span className="interact-key">E</span><span>Interaksi · {nearbyBoard.name}</span>
+        <button className="interact-button" disabled={paused} aria-label={`Interaksi dengan ${nearbyBoard.name}`} onClick={() => { if (!pausedRef.current) sceneRef.current?.interact(); }}>
+          <span className="interact-key">E</span><span>Interaksi</span>
         </button>
       )}
-      <div className="map-caption" aria-live="polite">{nearbyBoard ? nearbyBoard.name : 'Jelajahi sekitar untuk menemukan papan misi'}</div>
-      <p className="keyboard-hint">Gerak: WASD / panah <span>·</span> Interaksi: E</p>
     </section>
   );
 }
