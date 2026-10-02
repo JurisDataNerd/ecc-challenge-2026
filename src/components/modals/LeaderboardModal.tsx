@@ -40,17 +40,42 @@ interface LeaderboardModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUserPath: PathCode;
+  currentUserTotalXp?: number;
+  currentUserName?: string;
+  currentUserCity?: string;
+  currentUserStageReached?: number;
 }
 
 export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  currentUserPath,
+  currentUserTotalXp = 50,
+  currentUserName = 'Anda (Peserta)',
+  currentUserCity = 'Yogyakarta',
+  currentUserStageReached = 1
 }) => {
   if (!isOpen) return null;
 
   const [activeFilter, setActiveFilter] = useState<PathCode | 'all'>('all');
 
-  const filteredList = MOCK_LEADERBOARD
+  const currentEntry: LeaderboardEntry = {
+    rank: 0,
+    name: currentUserName,
+    city: currentUserCity,
+    pathCode: currentUserPath,
+    totalXp: currentUserTotalXp,
+    missionsCompleted: Math.min(4, currentUserStageReached),
+    stageReached: currentUserStageReached,
+    isCurrentUser: true
+  };
+
+  const combinedList = [
+    ...MOCK_LEADERBOARD.filter(e => !e.isCurrentUser),
+    currentEntry
+  ];
+
+  const filteredList = combinedList
     .filter(entry => activeFilter === 'all' || entry.pathCode === activeFilter)
     .sort((a, b) => b.totalXp - a.totalXp)
     .map((item, idx) => ({ ...item, displayRank: idx + 1 }));

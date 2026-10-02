@@ -6,6 +6,7 @@ import { StaffWorkspace } from './components/staff/StaffWorkspace';
 import { MentorReviewPanel } from './components/mentor/MentorReviewPanel';
 import { SelectionManager } from './components/admin/SelectionManager';
 import { STAGE_BOSS_MISSIONS } from './data/mockQuests';
+import { LeaderboardModal } from './components/modals/LeaderboardModal';
 import { PathCode, Submission, SubmissionFile, UserRole } from './types';
 import { navigate, useLocation } from './lib/navigation';
 import { journeyRoute, loadProgress, saveProgress } from './lib/progress';
@@ -21,11 +22,21 @@ export default function ProgramApp({ mode = 'demo', participantId }: { mode?: 'd
   const location = useLocation();
   const base = mode === 'demo' ? '/demo' : '/play';
   const [hydrated, setHydrated] = useState(false);
-  const [currentPath, setCurrentPath] = useState<PathCode>(saved.path);
+  const getInitialPath = (): PathCode => {
+    try {
+      const trackParam = new URLSearchParams(window.location.search).get('track');
+      if (trackParam && (trackParam === 'professional' || trackParam === 'social_impact' || trackParam === 'business')) {
+        return trackParam as PathCode;
+      }
+    } catch {}
+    return saved.path;
+  };
+  const [currentPath, setCurrentPath] = useState<PathCode>(getInitialPath);
   const [currentStage, setCurrentStage] = useState<StageOrdinal>(1);
   const [participantDemo, setParticipantDemo] = useState<ParticipantDemoState>(saved.progress);
   const [isMentorOpen, setIsMentorOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [talentPool, setTalentPool] = useState<TalentProfile[]>(INITIAL_TALENT_POOL);
   const route = journeyRoute(location, base, participantDemo);
   const currentRole = route.role;
@@ -120,6 +131,7 @@ export default function ProgramApp({ mode = 'demo', participantId }: { mode?: 'd
       onRoleChange={changeRole}
       onReview={stage => { setCurrentStage(stage); setIsMentorOpen(true); }}
       onOpenAdmin={() => setIsAdminOpen(true)}
+      onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
     />
     {isMentorOpen && <MentorReviewPanel
       isOpen={isMentorOpen}
@@ -131,6 +143,14 @@ export default function ProgramApp({ mode = 'demo', participantId }: { mode?: 'd
       isOpen={isAdminOpen}
       onClose={() => setIsAdminOpen(false)}
       onUpdateTalentPool={setTalentPool}
+    />}
+    {isLeaderboardOpen && <LeaderboardModal
+      isOpen={isLeaderboardOpen}
+      onClose={() => setIsLeaderboardOpen(false)}
+      currentUserPath={currentPath}
+      currentUserTotalXp={Object.values(participantDemo.xpAwards).reduce((sum, amount) => sum + amount, 0)}
+      currentUserName="Peserta (Demo)"
+      currentUserStageReached={participantDemo.currentStage}
     />}
   </>;
 }

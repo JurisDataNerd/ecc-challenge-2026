@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
-import { Pause } from '@phosphor-icons/react';
+import { Pause, Trophy } from '@phosphor-icons/react';
 import type { ParticipantStage } from '../data/participantStages';
 import { movementInput } from '../game/terrain';
 import type { StageBoard } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, paused, onOpenBoard, onPause, heroSpritesheetUrl }: {
+export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboard, heroSpritesheetUrl }: {
   stage: ParticipantStage;
   paused: boolean;
   onOpenBoard: () => void;
   onPause: () => void;
+  onOpenLeaderboard?: () => void;
   heroSpritesheetUrl?: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -145,6 +146,17 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause, heroSpritesheet
     <section className="game-viewport" tabIndex={0} aria-label={`${stage.phase} ${stage.name} scene`}>
       <div className="phaser-mount" ref={mountRef} aria-label={`${stage.name} game map`} />
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
+      {onOpenLeaderboard && (
+        <button
+          className="game-leaderboard-button"
+          type="button"
+          aria-label="Buka Papan Peringkat Global"
+          title="Papan Peringkat Global (Leaderboard)"
+          onClick={onOpenLeaderboard}
+        >
+          <Trophy size={20} weight="fill" className="text-amber-500" />
+        </button>
+      )}
       <button className="game-pause-button" type="button" aria-label="Jeda permainan" onClick={onPause}><Pause size={22} weight="bold" /></button>
 
       <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Buka Jeda untuk kembali ke peta.</p></div>

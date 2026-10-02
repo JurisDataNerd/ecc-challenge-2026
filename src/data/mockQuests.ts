@@ -61,6 +61,15 @@ export const STAGE_CONFIGS = [
     dates: '29 Okt 2026',
     objective: 'Sempurnakan prototipe, susun metrik keberhasilan, dan siapkan pitch deck final untuk Jakarta.'
   },
+  {
+    ordinal: 4,
+    title: 'Tahap 4: Impact & Celebration',
+    theme: 'Kelulusan, Komitmen & Altar Dampak',
+    quotaTarget: 'Finalis Terpilih',
+    enemyCount: 0,
+    dates: '05 Nov 2026',
+    objective: 'Rayakan pencapaian, rumuskan komitmen keberlanjutan dampak, dan resmikan kelulusan ekspedisi.'
+  },
 ];
 
 import type { StageOrdinal } from './participantStages';

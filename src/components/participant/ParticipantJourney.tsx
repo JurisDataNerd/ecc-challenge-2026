@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle, XCircle } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, Trophy, UserCircle, XCircle } from '@phosphor-icons/react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FutureBase, PathCode, Submission, UserRole } from '../../types';
 import { OFFICIAL_PATHS, STAGE_BOSS_MISSIONS, STAGE_QUIZZES, TRACK_STAGE_FOCUS } from '../../data/mockQuests';
 import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, type DemoAccessState, type ParticipantStage, type StageOrdinal, type StageGate } from '../../data/participantStages';
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
+import { LeaderboardModal } from '../modals/LeaderboardModal';
 import { JourneyDialog } from '../ui/JourneyDialog';
 import { GameWorld } from '../../ui/game-world';
 import { getHeroAvatar, getHeroSprite, getHeroConfig, getSavedHeroGender, saveHeroGender, type HeroGender } from '../../data/heroCharacters';
@@ -42,6 +43,7 @@ export function ParticipantJourney({
   const heroConfig = getHeroConfig(currentPath, heroGender);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [pausePassportOpen, setPausePassportOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
   const closePause = () => { setPauseOpen(false); setPausePassportOpen(false); };
   const [boardOpen, setBoardOpen] = useState(false);
@@ -102,6 +104,17 @@ export function ParticipantJourney({
         <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
         <div className="topbar-spacer" />
         {demo.onboarded && (
+          <button
+            type="button"
+            onClick={() => setIsLeaderboardOpen(true)}
+            className="topbar-leaderboard-btn"
+            title="Papan Peringkat Global (Leaderboard)"
+          >
+            <Trophy size={16} weight="fill" className="text-amber-500" />
+            <span className="font-rpg text-xs">Peringkat</span>
+          </button>
+        )}
+        {demo.onboarded && (
           <div className="flex items-center gap-2 bg-slate-900/90 border border-amber-500/40 rounded-full px-2.5 py-1 shadow-sm">
             <img 
               src={getHeroAvatar(currentPath, heroGender)} 
@@ -143,9 +156,10 @@ export function ParticipantJourney({
             <GameWorld 
               key={`${activeStage.ordinal}-${currentPath}-${heroGender}`} 
               stage={activeStage} 
-              paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} 
+              paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission) || isLeaderboardOpen} 
               onOpenBoard={openBoard} 
               onPause={openPause} 
+              onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
               heroSpritesheetUrl={getHeroSprite(currentPath, heroGender)}
             />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
@@ -157,7 +171,12 @@ export function ParticipantJourney({
             {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={closePause}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">{pausePassportOpen ? 'Future Passport' : 'Permainan dijeda'}</h2>
               {pausePassportOpen ? <><p>{trackLabel(currentPath)} · {totalXp.toLocaleString('id-ID')} XP</p><BaseMilestones milestones={PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo))} /></> : <><div className="pause-brief"><strong>Brief stage</strong><p>{activeStage.description}</p><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p></div><p><strong>Langkah berikutnya:</strong> {objective}</p><ControlsGuide /><p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName} {activeStage.boardHint}.</p></>}
-              <footer className="pause-actions"><button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button><button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
+              <footer className="pause-actions">
+                <button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button>
+                <button className="button button-quiet" onClick={() => { closePause(); setIsLeaderboardOpen(true); }}><Trophy size={18} className="text-amber-500" weight="fill" />Papan Peringkat</button>
+                <button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button>
+                <button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button>
+              </footer>
             </JourneyDialog>}
             <QuestBoard
               isOpen={boardOpen}
@@ -200,6 +219,7 @@ export function ParticipantJourney({
             demo={demo}
             totalXp={totalXp}
             onBack={() => toggleView('expedition')}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
             onUpdateGate={updateGate}
           />
         ) : (
@@ -211,10 +231,20 @@ export function ParticipantJourney({
             onPreview={setSelectedPreview}
             onEnter={enterStage}
             onPassport={() => toggleView('passport')}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
             onUpdateGate={updateGate}
           />
         )}
       </main>
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        currentUserPath={currentPath}
+        currentUserTotalXp={totalXp}
+        currentUserName={heroConfig.characterName}
+        currentUserCity="Yogyakarta"
+        currentUserStageReached={demo.currentStage}
+      />
     </div>
   );
 }
@@ -303,7 +333,7 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
   );
 }
 
-function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview, onEnter, onPassport, onUpdateGate }: {
+function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview, onEnter, onPassport, onOpenLeaderboard, onUpdateGate }: {
   currentPath: PathCode;
   demo: ParticipantDemoState;
   totalXp: number;
@@ -311,6 +341,7 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
   onPreview: (stage: StageOrdinal) => void;
   onEnter: (stage: ParticipantStage) => void;
   onPassport: () => void;
+  onOpenLeaderboard: () => void;
   onUpdateGate: (ordinal: 2 | 3, patch: Partial<StageGate>) => void;
 }) {
   const stage = PARTICIPANT_STAGES.find(item => item.ordinal === selectedPreview) || PARTICIPANT_STAGES[0];
@@ -320,7 +351,20 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
     <div className="expedition-layout">
       <section className="expedition-content">
         <div className="page-kicker"><MapTrifold size={16} /> SIAP IMPACT 2026 <span>·</span> DEMO DATA</div>
-        <div className="expedition-heading"><div><h1>Peta Ekspedisi</h1><p>Mulai dari Discover atau lanjutkan stage yang ingin kamu kerjakan. Progresmu tersimpan di browser ini.</p></div><button className="button button-quiet" onClick={onPassport}><BookOpenText size={17} /> Future Passport</button></div>
+        <div className="expedition-heading">
+          <div>
+            <h1>Peta Ekspedisi</h1>
+            <p>Mulai dari Discover atau lanjutkan stage yang ingin kamu kerjakan. Progresmu tersimpan di browser ini.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="button button-quiet" onClick={onOpenLeaderboard}>
+              <Trophy size={17} weight="fill" className="text-amber-500" /> Leaderboard
+            </button>
+            <button className="button button-quiet" onClick={onPassport}>
+              <BookOpenText size={17} /> Future Passport
+            </button>
+          </div>
+        </div>
         <div className="next-step"><div><strong>{demo.quizAttempts.length || Object.keys(demo.submissions).length ? "Lanjutkan perjalanan" : "Siap mulai?"}</strong><p>{next.phase} {next.name}: {next.description}</p></div><button className="button button-gold" onClick={() => onEnter(next)}>Masuk {next.phase} <ArrowRight size={17} /></button></div>
         <div className="route-panel">
           <div className="route-panel-top"><span>BOOTCAMP · 3 STAGE</span><span className="demo-pill">STATUS SIMULASI</span></div>
@@ -347,37 +391,75 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
         <AccessControls access={demo.access} onUpdateGate={onUpdateGate} />
       </section>
       <aside className="passport-rail">
-        <PassportSummary currentPath={currentPath} demo={demo} totalXp={totalXp} onOpen={onPassport} />
+        <PassportSummary currentPath={currentPath} demo={demo} totalXp={totalXp} onOpen={onPassport} onOpenLeaderboard={onOpenLeaderboard} />
         <div className="rail-note"><span className="eyebrow">CATATAN DEMO</span><p>Hasil, jadwal, status review, dan XP di layar ini adalah simulasi lokal.</p></div>
       </aside>
     </div>
   );
 }
 
-function PassportSummary({ currentPath, demo, totalXp, onOpen }: { currentPath: PathCode; demo: ParticipantDemoState; totalXp: number; onOpen: () => void }) {
+function PassportSummary({ currentPath, demo, totalXp, onOpen, onOpenLeaderboard }: { currentPath: PathCode; demo: ParticipantDemoState; totalXp: number; onOpen: () => void; onOpenLeaderboard: () => void }) {
   const milestones = PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo));
   return <section className="passport-card">
     <div className="passport-title"><span>FUTURE PASSPORT</span><span className="demo-pill">DEMO</span></div>
     <div className="passport-track"><span>PROGRAM TRACK</span><strong>{trackLabel(currentPath)}</strong></div>
-    <div className="passport-xp"><span>XP TOTAL <small>NONSPENDABLE</small></span><strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong><div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div><small>Progres ilustrasi saja · tidak memengaruhi akses</small></div>
+    <div className="passport-xp">
+      <span>XP TOTAL <small>NONSPENDABLE</small></span>
+      <strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong>
+      <div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div>
+      <button type="button" onClick={onOpenLeaderboard} className="passport-leaderboard-btn">
+        <Trophy size={15} weight="fill" className="text-amber-500" />
+        <span>Peringkat Global</span>
+      </button>
+      <small>Progres ilustrasi saja · tidak memengaruhi akses</small>
+    </div>
     <BaseMilestones milestones={milestones} />
     <button className="passport-open" onClick={onOpen}>Buka passport lengkap <ArrowRight size={15} /></button>
   </section>;
 }
 
-function PassportPage({ currentPath, demo, totalXp, onBack, onUpdateGate }: {
+function PassportPage({ currentPath, demo, totalXp, onBack, onOpenLeaderboard, onUpdateGate }: {
   currentPath: PathCode;
   demo: ParticipantDemoState;
   totalXp: number;
   onBack: () => void;
+  onOpenLeaderboard: () => void;
   onUpdateGate: (ordinal: 2 | 3, patch: Partial<StageGate>) => void;
 }) {
   const milestones = PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo));
   return <div className="passport-page">
-    <div className="passport-page-heading"><div><span className="page-kicker"><BookOpenText size={16} /> INDIVIDUAL PROGRESS · DEMO</span><h1>Future Passport</h1><p>Track, XP nonspendable, dan milestone stage milikmu.</p></div><button className="button button-quiet" onClick={onBack}><ArrowLeft size={17} /> Kembali ke Peta</button></div>
+    <div className="passport-page-heading">
+      <div>
+        <span className="page-kicker"><BookOpenText size={16} /> INDIVIDUAL PROGRESS · DEMO</span>
+        <h1>Future Passport</h1>
+        <p>Track, XP nonspendable, dan milestone stage milikmu.</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="button button-quiet" onClick={onOpenLeaderboard}>
+          <Trophy size={17} weight="fill" className="text-amber-500" /> Peringkat Global
+        </button>
+        <button className="button button-quiet" onClick={onBack}>
+          <ArrowLeft size={17} /> Kembali ke Peta
+        </button>
+      </div>
+    </div>
     {demo.futureBase && <section className="future-base-summary"><h2>Tujuan perjalananmu</h2><p>{demo.futureBase.direction}</p><strong>Target 90 hari</strong><p>{demo.futureBase.target90d}</p></section>}
     <div className="passport-page-grid">
-      <section className="passport-large-card"><span className="eyebrow">PROGRAM TRACK</span><strong className="passport-track-name">{trackLabel(currentPath)}</strong><span className="passport-track-description">{OFFICIAL_PATHS[currentPath].subtitle}</span><div className="passport-total"><span>XP DEMO · NONSPENDABLE</span><strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong><div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div><small>Bar ilustrasi dari 0–100 XP. XP tidak mengubah hasil seleksi atau akses stage.</small></div></section>
+      <section className="passport-large-card">
+        <span className="eyebrow">PROGRAM TRACK</span>
+        <strong className="passport-track-name">{trackLabel(currentPath)}</strong>
+        <span className="passport-track-description">{OFFICIAL_PATHS[currentPath].subtitle}</span>
+        <div className="passport-total">
+          <span>XP DEMO · NONSPENDABLE</span>
+          <strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong>
+          <div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div>
+          <button type="button" onClick={onOpenLeaderboard} className="passport-leaderboard-btn">
+            <Trophy size={16} weight="fill" className="text-amber-500" />
+            <span>Lihat Posisi di Peringkat Global</span>
+          </button>
+          <small>Bar ilustrasi dari 0–100 XP. XP tidak mengubah hasil seleksi atau akses stage.</small>
+        </div>
+      </section>
       <section className="passport-large-card base-card"><span className="eyebrow">PERSONAL BASE · MILESTONE</span><h2>Bangun dari hasil kerjamu</h2><p>Satu milestone tampil untuk setiap stage yang selesai.</p><BaseMilestones milestones={milestones} large /></section>
     </div>
     <div className="passport-stage-list">{PARTICIPANT_STAGES.map(stage => {
