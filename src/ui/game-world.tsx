@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
-import { Pause } from '@phosphor-icons/react';
+import { Pause, Trophy } from '@phosphor-icons/react';
 import type { ParticipantStage } from '../data/participantStages';
 import { movementInput } from '../game/terrain';
 import type { StageEncounter } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause }: {
+export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onOpenLeaderboard, heroSpritesheetUrl }: {
   stage: ParticipantStage;
   paused: boolean;
   quizDefeats: readonly string[];
   onOpenQuiz: (quizId: string) => void;
   onPause: () => void;
+  onOpenLeaderboard?: () => void;
+  heroSpritesheetUrl?: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ interact: () => void } | null>(null);
@@ -58,9 +60,15 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause }: {
       ]);
       const parent = mountRef.current;
       if (disposed || !parent) return;
-      const scene = new Scene(stage, () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current), () => defeatsRef.current, setNearbyEncounter, encounter => {
-        if (!pausedRef.current) onOpenQuiz(encounter.id);
-      }, () => setGameReady(true));
+      const scene = new Scene(
+        stage,
+        () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current),
+        () => defeatsRef.current,
+        setNearbyEncounter,
+        encounter => { if (!pausedRef.current) onOpenQuiz(encounter.id); },
+        () => setGameReady(true),
+        heroSpritesheetUrl
+      );
       sceneRef.current = scene;
       game = new PhaserModule.Game({
         type: PhaserModule.AUTO,
@@ -81,7 +89,7 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause }: {
       game?.destroy(true);
       sceneRef.current = null;
     };
-  }, [stage, onOpenQuiz]);
+  }, [stage, onOpenQuiz, heroSpritesheetUrl]);
 
   useEffect(() => {
     const pressed = new Set<string>();
@@ -142,6 +150,17 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause }: {
     <section className="game-viewport" tabIndex={0} aria-label={`${stage.phase} ${stage.name} scene`}>
       <div className="phaser-mount" ref={mountRef} aria-label={`${stage.name} game map`} />
       {!gameReady && <div className="loading-note" role="status">Memuat peta {stage.phase}…</div>}
+      {onOpenLeaderboard && (
+        <button
+          className="game-leaderboard-button"
+          type="button"
+          aria-label="Buka Papan Peringkat Global"
+          title="Papan Peringkat Global (Leaderboard)"
+          onClick={onOpenLeaderboard}
+        >
+          <Trophy size={20} weight="fill" className="text-amber-500" />
+        </button>
+      )}
       <button className="game-pause-button" type="button" aria-label="Jeda permainan" onClick={onPause}><Pause size={22} weight="bold" /></button>
 
       <div className="orientation-note" role="status"><strong>Putar ponsel ke posisi lanskap</strong><p>Peta dan kontrol gerak membutuhkan layar yang lebih lebar. Buka Jeda untuk kembali ke peta.</p></div>

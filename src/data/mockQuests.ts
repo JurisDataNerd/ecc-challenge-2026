@@ -63,12 +63,12 @@ export const STAGE_CONFIGS = [
   },
   {
     ordinal: 4,
-    title: 'Tahap 4: Impact',
-    theme: 'Dampak & Komitmen Masa Depan',
-    quotaTarget: 'Kelulusan',
+    title: 'Tahap 4: Impact & Celebration',
+    theme: 'Kelulusan, Komitmen & Altar Dampak',
+    quotaTarget: 'Finalis Terpilih',
     enemyCount: 3,
-    dates: 'Menunggu jadwal ECC',
-    objective: 'Ukur dampak, siapkan keberlanjutan, dan tetapkan komitmen 90 hari.'
+    dates: '05 Nov 2026',
+    objective: 'Rayakan pencapaian, rumuskan komitmen keberlanjutan dampak, dan resmikan kelulusan ekspedisi.'
   },
 ];
 

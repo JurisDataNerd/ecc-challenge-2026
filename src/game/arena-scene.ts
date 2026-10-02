@@ -4,6 +4,8 @@ import type { ParticipantStage } from '../data/participantStages';
 import { STAGE_QUIZZES } from '../data/mockQuests';
 import { STAGE_MONSTERS, monsterArtPath, type StageMonster } from '../data/stageMonsters';
 
+import { getHeroSprite, getSavedHeroGender } from '../data/heroCharacters';
+
 export type StageEncounter = { id: string; name: string; locked: boolean };
 type Movement = { x: number; y: number };
 const MAP_SIZE = 640;
@@ -25,6 +27,7 @@ export class ArenaScene extends Phaser.Scene {
     private readonly onNearbyEncounter: (encounter: StageEncounter | null) => void,
     private readonly onEncounterInteract: (encounter: StageEncounter) => void,
     private readonly onReady: () => void,
+    private readonly heroSpritesheetUrl?: string,
   ) {
     super(`stage-${stage.ordinal}`);
   }
@@ -32,7 +35,8 @@ export class ArenaScene extends Phaser.Scene {
   preload() {
     this.load.image('world-map', this.stage.mapPath);
     this.load.image('player-shadow', '/assets/mixel/MainCharacter%20v.1.0/MainC_Shadow.png');
-    this.load.spritesheet('knight', '/assets/dungeon/hero_knight_spritesheet.png', { frameWidth: 48, frameHeight: 48 });
+    const heroSprite = this.heroSpritesheetUrl || getHeroSprite('professional', getSavedHeroGender());
+    this.load.spritesheet('knight', heroSprite, { frameWidth: 48, frameHeight: 48 });
     for (const monster of STAGE_MONSTERS[this.stage.ordinal]) this.load.image(monster.art, monsterArtPath(monster.art));
   }
 
@@ -95,8 +99,8 @@ export class ArenaScene extends Phaser.Scene {
 
   private spawnPlayer() {
     const { x, y } = this.stage.spawn;
-    this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(54, 34).setAlpha(0.8).setDepth(y - 1);
-    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.4).setDepth(y).play('knight-idle');
+    this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(68, 40).setAlpha(0.8).setDepth(y - 1);
+    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.85).setDepth(y).play('knight-idle');
     const updateCamera = () => this.cameras.main.setZoom(Math.max(this.scale.width < 768 || this.scale.height < 480 ? 0.8 : 1, this.scale.width/this.stage.worldSize, this.scale.height/this.stage.worldSize));
     this.cameras.main.roundPixels = true;
     this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12, 0, 32);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, Trophy, UserCircle } from '@phosphor-icons/react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FutureBase, PathCode, Submission, UserRole } from '../../types';
 import { OFFICIAL_PATHS, STAGE_BOSS_MISSIONS, STAGE_QUIZZES, TRACK_STAGE_FOCUS } from '../../data/mockQuests';
@@ -7,8 +7,10 @@ import { STAGE_MONSTERS } from '../../data/stageMonsters';
 import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, type DemoAccessState, type ParticipantStage, type StageOrdinal, type StageGate } from '../../data/participantStages';
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
+import { LeaderboardModal } from '../modals/LeaderboardModal';
 import { JourneyDialog } from '../ui/JourneyDialog';
 import { GameWorld } from '../../ui/game-world';
+import { getHeroAvatar, getHeroSprite, getHeroConfig, getSavedHeroGender, saveHeroGender, type HeroGender } from '../../data/heroCharacters';
 
 import type { ParticipantDemoState } from '../../lib/progress';
 
@@ -38,8 +40,11 @@ export function ParticipantJourney({
   storageError: string | null;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
+  const [heroGender, setHeroGender] = useState<HeroGender>(() => getSavedHeroGender());
+  const heroConfig = getHeroConfig(currentPath, heroGender);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [pausePassportOpen, setPausePassportOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
   const closePause = () => { setPauseOpen(false); setPausePassportOpen(false); };
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
@@ -102,6 +107,43 @@ export function ParticipantJourney({
         <img className="brand-mark" src="/assets/ecc-logo.png" alt="" />
         <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
         <div className="topbar-spacer" />
+        {demo.onboarded && (
+          <button
+            type="button"
+            onClick={() => setIsLeaderboardOpen(true)}
+            className="topbar-leaderboard-btn"
+            title="Papan Peringkat Global (Leaderboard)"
+          >
+            <Trophy size={16} weight="fill" className="text-amber-500" />
+            <span className="font-rpg text-xs">Peringkat</span>
+          </button>
+        )}
+        {demo.onboarded && (
+          <div className="flex items-center gap-2 bg-slate-900/90 border border-amber-500/40 rounded-full px-2.5 py-1 shadow-sm">
+            <img 
+              src={getHeroAvatar(currentPath, heroGender)} 
+              alt={heroConfig.characterName} 
+              className="w-7 h-7 rounded-full border border-amber-400 object-cover shadow-sm"
+              title={`${heroConfig.characterName} (${heroConfig.title})`}
+            />
+            <div className="flex flex-col text-left leading-tight hidden sm:flex">
+              <span className="text-[11px] font-bold text-amber-300 font-rpg">{heroConfig.characterName}</span>
+              <span className="text-[9px] text-slate-400 font-mono">{heroConfig.title}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const next = heroGender === 'male' ? 'female' : 'male';
+                setHeroGender(next);
+                saveHeroGender(next);
+              }}
+              className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 cursor-pointer transition-all active:scale-95 ml-1"
+              title="Ganti Gender Karakter (Laki-laki / Perempuan)"
+            >
+              {heroGender === 'male' ? '♂ L' : '♀ P'}
+            </button>
+          </div>
+        )}
         {demo.onboarded && <span className="track-chip"><span />{trackLabel(currentPath)}</span>}
         {allowStaffDemo && <label className="workspace-picker"><UserCircle size={17} /><span>Demo peran</span>
           <select aria-label="Pilih workspace" value={currentRole} onChange={event => onRoleChange(event.target.value as UserRole)}>
@@ -115,7 +157,16 @@ export function ParticipantJourney({
           <Onboarding currentPath={currentPath} onContinue={onCompleteOnboarding} />
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
-            <GameWorld key={activeStage.ordinal} stage={activeStage} paused={introOpen || pauseOpen || Boolean(activeQuiz) || Boolean(activeMission)} quizDefeats={demo.quizDefeats} onOpenQuiz={openQuiz} onPause={openPause} />
+            <GameWorld 
+              key={`${activeStage.ordinal}-${currentPath}-${heroGender}`} 
+              stage={activeStage} 
+              paused={introOpen || pauseOpen || Boolean(activeQuiz) || Boolean(activeMission) || isLeaderboardOpen}
+              quizDefeats={demo.quizDefeats}
+              onOpenQuiz={openQuiz}
+              onPause={openPause} 
+              onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+              heroSpritesheetUrl={getHeroSprite(currentPath, heroGender)}
+            />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
               <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan tiga monster kuis</strong><p>Jawab dua kuis untuk membuka boss. Setelah boss kalah, buka Misi dari menu Jeda.</p></div></div>
@@ -125,12 +176,19 @@ export function ParticipantJourney({
             {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={closePause}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">{pausePassportOpen ? 'Future Passport' : 'Permainan dijeda'}</h2>
               {pausePassportOpen ? <><p>{trackLabel(currentPath)} · {totalXp.toLocaleString('id-ID')} XP</p><BaseMilestones milestones={PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo))} /></> : <><div className="pause-brief"><strong>Brief stage</strong><p>{activeStage.description}</p><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p></div><p><strong>Langkah berikutnya:</strong> {objective}</p><p className="pause-instruction"><strong>Misi: {STAGE_BOSS_MISSIONS[activeStage.ordinal].title}</strong><br />{bossDefeated ? 'Terbuka. Pilih Buka misi di bawah.' : `Terkunci. Kalahkan ${3 - STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === activeStage.ordinal && demo.quizDefeats.includes(quiz.id)).length} monster kuis untuk membukanya.`}</p><ControlsGuide /></>}
-              <footer className="pause-actions"><button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button>{!pausePassportOpen && <button className="button button-outline" disabled={!bossDefeated} onClick={() => { closePause(); openMission(); }}>Buka misi</button>}<button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button><button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
+              <footer className="pause-actions">
+                <button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button>
+                {!pausePassportOpen && <button className="button button-outline" disabled={!bossDefeated} onClick={() => { closePause(); openMission(); }}>Buka misi</button>}
+                <button className="button button-quiet" onClick={() => { closePause(); setIsLeaderboardOpen(true); }}><Trophy size={18} className="text-amber-500" weight="fill" />Papan Peringkat</button>
+                <button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button>
+                <button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button>
+              </footer>
             </JourneyDialog>}
             <InteractiveQuizModal
               key={activeQuiz?.id || 'no-quiz'}
               quiz={activeQuiz}
               currentPath={currentPath}
+              gender={heroGender}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               alreadyAttempted={Boolean(activeQuiz && demo.quizAttempts.includes(activeQuiz.id))}
               readOnly={activeGate.readOnly}
@@ -157,6 +215,7 @@ export function ParticipantJourney({
             demo={demo}
             totalXp={totalXp}
             onBack={() => toggleView('expedition')}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
             onUpdateGate={updateGate}
           />
         ) : (
@@ -168,19 +227,36 @@ export function ParticipantJourney({
             onPreview={setSelectedPreview}
             onEnter={enterStage}
             onPassport={() => toggleView('passport')}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
             onUpdateGate={updateGate}
           />
         )}
       </main>
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        currentUserPath={currentPath}
+        currentUserTotalXp={totalXp}
+        currentUserName={heroConfig.characterName}
+        currentUserCity="Yogyakarta"
+        currentUserStageReached={demo.currentStage}
+      />
     </div>
   );
 }
 
 function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onContinue: (path: PathCode, futureBase: FutureBase) => void }) {
   const [path, setPath] = useState<PathCode>(currentPath);
+  const [gender, setGender] = useState<HeroGender>(() => getSavedHeroGender());
   const [direction, setDirection] = useState('');
   const [target90d, setTarget90d] = useState('');
   const selected = OFFICIAL_PATHS[path];
+  const activeHero = getHeroConfig(path, gender);
+
+  const handleGenderSelect = (newGender: HeroGender) => {
+    setGender(newGender);
+    saveHeroGender(newGender);
+  };
 
   return (
     <section className="onboarding-layout">
@@ -195,8 +271,49 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
       </div>
       <form className="onboarding-form" onSubmit={event => { event.preventDefault(); if (!direction.trim() || !target90d.trim()) return; onContinue(path, { direction: direction.trim(), target90d: target90d.trim(), skills: [], support: '' }); }}>
         
-        <h2>Pilih jalur perjalanan</h2>
-        <p className="muted-copy">Tentukan fokusmu, lalu catat satu komitmen untuk 90 hari ke depan.</p>
+        <h2>Pilih jalur & karakter hero</h2>
+        <p className="muted-copy">Tentukan fokus track dan persona karakter petualangmu.</p>
+
+        {/* Gender Selector with FF Avatar Preview */}
+        <div className="p-3 bg-slate-900/90 border border-slate-700 rounded-xl mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img 
+              src={activeHero.avatarUrl} 
+              alt={activeHero.characterName} 
+              className="w-12 h-12 rounded-full border-2 border-amber-400 object-cover shadow-md"
+            />
+            <div>
+              <div className="font-bold text-amber-300 text-sm font-rpg">{activeHero.characterName}</div>
+              <div className="text-xs text-slate-300 font-mono">{activeHero.title}</div>
+            </div>
+          </div>
+
+          <div className="flex gap-1.5" role="radiogroup" aria-label="Pilih Gender Hero">
+            <button
+              type="button"
+              onClick={() => handleGenderSelect('male')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                gender === 'male' 
+                  ? 'bg-sky-600 border-sky-400 text-white shadow-sm' 
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ♂ Laki-laki
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGenderSelect('female')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                gender === 'female' 
+                  ? 'bg-rose-600 border-rose-400 text-white shadow-sm' 
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ♀ Perempuan
+            </button>
+          </div>
+        </div>
+
         <div className="track-options" role="radiogroup" aria-label="Pilih track program">
           {Object.values(OFFICIAL_PATHS).map(option => <button type="button" key={option.code} className={`track-option ${path === option.code ? 'selected' : ''}`} onClick={() => setPath(option.code)} role="radio" aria-checked={path === option.code}>
             <span className="track-option-icon" style={{ color: option.themeColor }}>{path === option.code ? <Check size={18} /> : <Compass size={18} />}</span>
@@ -212,7 +329,7 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
   );
 }
 
-function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview, onEnter, onPassport, onUpdateGate }: {
+function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview, onEnter, onPassport, onOpenLeaderboard, onUpdateGate }: {
   currentPath: PathCode;
   demo: ParticipantDemoState;
   totalXp: number;
@@ -220,6 +337,7 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
   onPreview: (stage: StageOrdinal) => void;
   onEnter: (stage: ParticipantStage) => void;
   onPassport: () => void;
+  onOpenLeaderboard: () => void;
   onUpdateGate: (ordinal: 2 | 3, patch: Partial<StageGate>) => void;
 }) {
   const stage = PARTICIPANT_STAGES.find(item => item.ordinal === selectedPreview) || PARTICIPANT_STAGES[0];
@@ -231,6 +349,7 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
         <span className="expedition-nav-title">Perjalananmu</span>
         <a className="expedition-nav-link is-current" href="#stage-list"><MapTrifold size={19} /> Peta ekspedisi</a>
         <button className="expedition-nav-link" onClick={onPassport}><BookOpenText size={19} /> Future Passport</button>
+        <button className="expedition-nav-link" onClick={onOpenLeaderboard}><Trophy size={19} /> Papan peringkat</button>
         <div className="expedition-nav-progress"><span>Stage selesai</span><strong>{PARTICIPANT_STAGES.filter(item => isStageComplete(item, demo)).length} / {PARTICIPANT_STAGES.length}</strong><small>Lanjutkan dari stage yang tersedia.</small></div>
       </nav>
       <section className="expedition-content">
@@ -261,37 +380,75 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
         <AccessControls access={demo.access} onUpdateGate={onUpdateGate} />
       </section>
       <aside className="passport-rail">
-        <PassportSummary currentPath={currentPath} demo={demo} totalXp={totalXp} onOpen={onPassport} />
+        <PassportSummary currentPath={currentPath} demo={demo} totalXp={totalXp} onOpen={onPassport} onOpenLeaderboard={onOpenLeaderboard} />
         <div className="rail-note"><strong>Progres simulasi</strong><p>Hasil, jadwal, status review, dan XP tersimpan di browser ini sebagai data demo.</p></div>
       </aside>
     </div>
   );
 }
 
-function PassportSummary({ currentPath, demo, totalXp, onOpen }: { currentPath: PathCode; demo: ParticipantDemoState; totalXp: number; onOpen: () => void }) {
+function PassportSummary({ currentPath, demo, totalXp, onOpen, onOpenLeaderboard }: { currentPath: PathCode; demo: ParticipantDemoState; totalXp: number; onOpen: () => void; onOpenLeaderboard: () => void }) {
   const milestones = PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo));
   return <section className="passport-card">
     <div className="passport-title"><span>FUTURE PASSPORT</span><span className="demo-pill">DEMO</span></div>
     <div className="passport-track"><span>PROGRAM TRACK</span><strong>{trackLabel(currentPath)}</strong></div>
-    <div className="passport-xp"><span>XP TOTAL <small>NONSPENDABLE</small></span><strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong><div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div><small>Progres ilustrasi saja · tidak memengaruhi akses</small></div>
+    <div className="passport-xp">
+      <span>XP TOTAL <small>NONSPENDABLE</small></span>
+      <strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong>
+      <div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div>
+      <button type="button" onClick={onOpenLeaderboard} className="passport-leaderboard-btn">
+        <Trophy size={15} weight="fill" className="text-amber-500" />
+        <span>Peringkat Global</span>
+      </button>
+      <small>Progres ilustrasi saja · tidak memengaruhi akses</small>
+    </div>
     <BaseMilestones milestones={milestones} />
     <button className="passport-open" onClick={onOpen}>Buka passport lengkap <ArrowRight size={15} /></button>
   </section>;
 }
 
-function PassportPage({ currentPath, demo, totalXp, onBack, onUpdateGate }: {
+function PassportPage({ currentPath, demo, totalXp, onBack, onOpenLeaderboard, onUpdateGate }: {
   currentPath: PathCode;
   demo: ParticipantDemoState;
   totalXp: number;
   onBack: () => void;
+  onOpenLeaderboard: () => void;
   onUpdateGate: (ordinal: 2 | 3, patch: Partial<StageGate>) => void;
 }) {
   const milestones = PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo));
   return <div className="passport-page">
-    <div className="passport-page-heading"><div><span className="page-kicker"><BookOpenText size={16} /> INDIVIDUAL PROGRESS · DEMO</span><h1>Future Passport</h1><p>Track, XP nonspendable, dan milestone stage milikmu.</p></div><button className="button button-quiet" onClick={onBack}><ArrowLeft size={17} /> Kembali ke Peta</button></div>
+    <div className="passport-page-heading">
+      <div>
+        <span className="page-kicker"><BookOpenText size={16} /> INDIVIDUAL PROGRESS · DEMO</span>
+        <h1>Future Passport</h1>
+        <p>Track, XP nonspendable, dan milestone stage milikmu.</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="button button-quiet" onClick={onOpenLeaderboard}>
+          <Trophy size={17} weight="fill" className="text-amber-500" /> Peringkat Global
+        </button>
+        <button className="button button-quiet" onClick={onBack}>
+          <ArrowLeft size={17} /> Kembali ke Peta
+        </button>
+      </div>
+    </div>
     {demo.futureBase && <section className="future-base-summary"><h2>Tujuan perjalananmu</h2><p>{demo.futureBase.direction}</p><strong>Target 90 hari</strong><p>{demo.futureBase.target90d}</p></section>}
     <div className="passport-page-grid">
-      <section className="passport-large-card"><span className="eyebrow">PROGRAM TRACK</span><strong className="passport-track-name">{trackLabel(currentPath)}</strong><span className="passport-track-description">{OFFICIAL_PATHS[currentPath].subtitle}</span><div className="passport-total"><span>XP DEMO · NONSPENDABLE</span><strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong><div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div><small>Bar ilustrasi dari 0–100 XP. XP tidak mengubah hasil seleksi atau akses stage.</small></div></section>
+      <section className="passport-large-card">
+        <span className="eyebrow">PROGRAM TRACK</span>
+        <strong className="passport-track-name">{trackLabel(currentPath)}</strong>
+        <span className="passport-track-description">{OFFICIAL_PATHS[currentPath].subtitle}</span>
+        <div className="passport-total">
+          <span>XP DEMO · NONSPENDABLE</span>
+          <strong>{totalXp.toLocaleString('id-ID')} <i>XP</i></strong>
+          <div className="xp-track"><span style={{ width: `${Math.min(totalXp, 100)}%` }} /></div>
+          <button type="button" onClick={onOpenLeaderboard} className="passport-leaderboard-btn">
+            <Trophy size={16} weight="fill" className="text-amber-500" />
+            <span>Lihat Posisi di Peringkat Global</span>
+          </button>
+          <small>Bar ilustrasi dari 0–100 XP. XP tidak mengubah hasil seleksi atau akses stage.</small>
+        </div>
+      </section>
       <section className="passport-large-card base-card"><span className="eyebrow">PERSONAL BASE · MILESTONE</span><h2>Bangun dari hasil kerjamu</h2><p>Satu milestone tampil untuk setiap stage yang selesai.</p><BaseMilestones milestones={milestones} large /></section>
     </div>
     <div className="passport-stage-list">{PARTICIPANT_STAGES.map(stage => {

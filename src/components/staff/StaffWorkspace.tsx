@@ -1,21 +1,33 @@
-import { ArrowRight, ClipboardText, Scales, UserCircle } from '@phosphor-icons/react';
+import { ArrowRight, ClipboardText, Scales, Trophy, UserCircle } from '@phosphor-icons/react';
 import type { PathCode, Submission, UserRole } from '../../types';
 import { PARTICIPANT_STAGES, trackLabel, type StageOrdinal } from '../../data/participantStages';
 import { STAGE_BOSS_MISSIONS } from '../../data/mockQuests';
 
-export function StaffWorkspace({ role, currentPath, submissions, onRoleChange, onReview, onOpenAdmin }: {
+export function StaffWorkspace({ role, currentPath, submissions, onRoleChange, onReview, onOpenAdmin, onOpenLeaderboard }: {
   role: Extract<UserRole, 'mentor' | 'admin'>;
   currentPath: PathCode;
   submissions: Record<number, Submission>;
   onRoleChange: (role: UserRole) => void;
   onReview: (stage: StageOrdinal) => void;
   onOpenAdmin: () => void;
+  onOpenLeaderboard?: () => void;
 }) {
   return <div className="participant-shell staff-shell">
     <header className="participant-topbar">
       <img className="brand-mark" src="/assets/ecc-logo.png" alt="" />
       <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
       <div className="topbar-spacer" />
+      {onOpenLeaderboard && (
+        <button
+          type="button"
+          onClick={onOpenLeaderboard}
+          className="topbar-leaderboard-btn"
+          title="Buka Papan Peringkat Global"
+        >
+          <Trophy size={16} weight="fill" className="text-amber-500" />
+          <span className="font-rpg text-xs">Peringkat Global</span>
+        </button>
+      )}
       <span className="track-chip"><span />{trackLabel(currentPath)}</span>
       <label className="workspace-picker"><UserCircle size={17} /><span>Workspace</span>
         <select aria-label="Pilih workspace" value={role} onChange={event => onRoleChange(event.target.value as UserRole)}>

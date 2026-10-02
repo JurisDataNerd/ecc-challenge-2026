@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { ArrowRight, ArrowLeft, MapTrifold, Hammer, PresentationChart, MapPin, EnvelopeSimple } from '@phosphor-icons/react';
+import { ArrowRight, ArrowLeft, MapTrifold, Hammer, PresentationChart, MapPin, EnvelopeSimple, ShieldCheck, Sparkle, Lightning, Trophy } from '@phosphor-icons/react';
 import { AccountPage, type AccountMode } from './components/AccountPage';
 import { authErrorMessage, useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
@@ -43,27 +43,105 @@ export default function App() {
   if (path !== '/') return <div className="public-experience"><header className="public-nav"><Brand /></header><main className="missing-page"><h1>Jalur ini belum ditemukan.</h1><p>Kembali ke beranda untuk login atau mencoba ekspedisi.</p><a className="entry-button entry-primary" href="/">Ke beranda</a></main></div>;
   return <div className="public-experience">
     <a className="skip-link" href="#journey">Langsung ke konten</a>
-    <header className="public-nav"><Brand /><nav aria-label="Navigasi utama"><a href="#stages">Tentang perjalanan</a><a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login"}</a></nav></header>
+    <header className="public-nav">
+      <Brand />
+      <nav aria-label="Navigasi utama">
+        <a href="#tracks">Pilihan track</a>
+        <a href="#stages">Tentang perjalanan</a>
+        <a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login"}</a>
+      </nav>
+    </header>
     <main id="journey">
-      <section className="landing-hero">
-        <div className="hero-copy"><p className="program-name">Program SIAP IMPACT 2026</p><h1>Perjalanan belajar yang bisa kamu jelajahi.</h1><p className="hero-description">Temukan masalah, bangun solusi, lalu ceritakan dampaknya. Future Quest membawa perjalanan bootcamp-mu ke dalam dunia yang bisa kamu mainkan.</p><div className="entry-actions"><a className="entry-button entry-primary" href="/demo">Coba demo <ArrowRight size={18} /></a><a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login peserta"}</a></div><p className="entry-caption">Demo terbuka untuk semua. Akun peserta melalui undangan ECC.</p></div>
-        <figure className="hero-landscape"><img src="/assets/mixel/Sample%20640x640.PNG" width="640" height="640" alt="Dunia pixel Future Quest, dengan jalan setapak, taman, dan tempat eksplorasi" /><figcaption><span className="pixel-label">Future Base</span><span>Titik awal perjalananmu</span></figcaption></figure>
+      {/* Screen 1: Hero */}
+      <section className="landing-screen landing-hero-screen" id="hero">
+        <div className="landing-hero">
+          <div className="hero-copy">
+            <p className="program-name">Program SIAP IMPACT 2026</p>
+            <h1>Perjalanan belajar yang bisa kamu jelajahi.</h1>
+            <p className="hero-description">Temukan masalah, bangun solusi, lalu ceritakan dampaknya. Future Quest membawa perjalanan bootcamp-mu ke dalam dunia yang bisa kamu mainkan.</p>
+            <div className="entry-actions">
+              <a className="entry-button entry-primary" href="/demo">Coba demo <ArrowRight size={18} /></a>
+              <a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login peserta"}</a>
+            </div>
+            <p className="entry-caption">Demo terbuka untuk semua. Akun peserta melalui undangan ECC.</p>
+          </div>
+          <figure className="hero-landscape">
+            <img src="/assets/landing/ecc_future_quest_keyart.jpg" width="1376" height="768" alt="ECC Future Quest Key Visual - The Journey of Impact" />
+          </figure>
+        </div>
       </section>
-      <section className="landing-stages" id="stages" aria-labelledby="stage-heading"><div className="stage-intro"><h2>Tiga stage. Satu perjalanan milikmu.</h2><p>Bergerak di peta, temukan papan misi, dan kerjakan tantangan sesuai jalur programmu. Kembali ke peta ekspedisi kapan pun untuk berpindah stage.</p></div><ol className="landing-route">
-        <li><MapTrifold size={28} weight="duotone" /><div><span className="pixel-label">L1 · Discover</span><h3>Mulai dari rasa ingin tahu.</h3><p>Amati pengalaman nyata dan temukan masalah yang layak diselesaikan.</p></div></li>
-        <li><Hammer size={28} weight="duotone" /><div><span className="pixel-label">L2 · Build</span><h3>Wujudkan idemu.</h3><p>Bangun prototipe, uji dengan pengguna, dan pelajari hasilnya.</p></div></li>
-        <li><PresentationChart size={28} weight="duotone" /><div><span className="pixel-label">L3 · Pitch</span><h3>Ceritakan hasil perjalanan.</h3><p>Sempurnakan solusi dan siapkan presentasi finalmu.</p></div></li>
-      </ol></section>
-      <section className="landing-invitation"><div><h2>Sudah menjadi peserta?</h2><p>Gunakan undangan ECC untuk mengaktifkan akun, lalu lanjutkan ekspedisimu.</p></div><a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login peserta"}</a></section>
+
+      {/* Screen 2: Tracks */}
+      <section className="landing-screen landing-stages landing-tracks-screen" id="tracks" aria-labelledby="track-heading">
+        <div className="stage-content-wrap">
+          <div className="stage-intro">
+            <h2 id="track-heading">Tiga track. Pilih peranmu.</h2>
+            <p>Setiap jalur memiliki fokus tantangan dan karakter di dalam game sendiri. Pilih peran yang paling sesuai dengan minat dan tujuan belajarmu.</p>
+          </div>
+          <ol className="landing-route">
+            <li>
+              <ShieldCheck size={28} weight="duotone" />
+              <div>
+                <span className="pixel-label">Track 01 · Profesional</span>
+                <h3>Ksatria (Knight)</h3>
+                <p>Tantangan tata kelola, kepemimpinan kerja, dan pemecahan masalah operasional industri.</p>
+              </div>
+            </li>
+            <li>
+              <Sparkle size={28} weight="duotone" />
+              <div>
+                <span className="pixel-label">Track 02 · Social Impact</span>
+                <h3>Mistikus (Mage)</h3>
+                <p>Tantangan pemberdayaan masyarakat, advokasi komunitas, dan dampak sosial nyata.</p>
+              </div>
+            </li>
+            <li>
+              <Lightning size={28} weight="duotone" />
+              <div>
+                <span className="pixel-label">Track 03 · Bisnis</span>
+                <h3>Assassin (Rogue)</h3>
+                <p>Tantangan validasi model bisnis, inovasi produk, dan strategi pasar yang siap tumbuh.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      {/* Screen 3: Stages */}
+      <section className="landing-screen landing-stages" id="stages" aria-labelledby="stage-heading">
+        <div className="stage-content-wrap">
+          <div className="stage-intro">
+            <h2 id="stage-heading">Empat stage. Satu perjalanan milikmu.</h2>
+            <p>Bergerak di peta, temukan papan misi, dan kerjakan tantangan sesuai jalur programmu. Kembali ke peta ekspedisi kapan pun untuk berpindah stage.</p>
+          </div>
+          <ol className="landing-route stages-4">
+            <li><MapTrifold size={28} weight="duotone" /><div><span className="pixel-label">L1 · Discover</span><h3>Mulai dari rasa ingin tahu.</h3><p>Amati pengalaman nyata dan temukan masalah yang layak diselesaikan.</p></div></li>
+            <li><Hammer size={28} weight="duotone" /><div><span className="pixel-label">L2 · Build</span><h3>Wujudkan idemu.</h3><p>Bangun prototipe, uji dengan pengguna, dan pelajari hasilnya.</p></div></li>
+            <li><PresentationChart size={28} weight="duotone" /><div><span className="pixel-label">L3 · Pitch</span><h3>Ceritakan hasil perjalanan.</h3><p>Sempurnakan solusi dan siapkan presentasi finalmu.</p></div></li>
+            <li><Trophy size={28} weight="duotone" /><div><span className="pixel-label">L4 · Impact</span><h3>Rayakan dampakmu.</h3><p>Resmikan kelulusan, komitmen jangka panjang, dan dampak nyata.</p></div></li>
+          </ol>
+        </div>
+      </section>
+
+      {/* Screen 4: Invitation & Footer */}
+      <section className="landing-screen landing-closing-screen" id="closing">
+        <div className="landing-invitation">
+          <div>
+            <h2>Sudah menjadi peserta?</h2>
+            <p>Gunakan undangan ECC untuk mengaktifkan akun, lalu lanjutkan ekspedisimu.</p>
+          </div>
+          <a className="entry-button entry-secondary" href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login peserta"}</a>
+        </div>
+        <footer className="public-footer">
+          <div className="footer-main">
+            <div className="footer-about"><Brand linked={false} /><p>Future Quest adalah perjalanan belajar interaktif dalam program SIAP IMPACT 2026. Jelajahi stage, kerjakan tantangan, dan bangun dampakmu.</p></div>
+            <nav aria-label="Navigasi Future Quest"><h2>Future Quest</h2><a href="#hero">Beranda</a><a href="#tracks">Tiga track</a><a href="#stages">Empat stage</a><a href="/demo">Coba demo</a></nav>
+            <nav aria-label="Ekosistem ECC"><h2>Ekosistem ECC</h2><a href="https://ecc.co.id/">Situs ECC</a><a href="https://ecc.co.id/products/opa">Career Match Engine</a><a href="https://ecc.co.id/products/oas">Online Assessment &amp; Selection</a></nav>
+            <div className="footer-contact"><h2>Kontak</h2><p><MapPin size={18} aria-hidden="true" /><span><strong>Gedung PDIN, Yogyakarta</strong><br /><span className="footer-address-detail">Lantai 2, Jl. C. Simanjuntak No. 19, Terban, Daerah Istimewa Yogyakarta 55223, Indonesia</span></span></p><a href="mailto:business@ecc.co.id"><EnvelopeSimple size={18} aria-hidden="true" />business@ecc.co.id</a></div>
+          </div>
+          <div className="footer-bottom"><span>© 2026 PT Engineering Career Center. Seluruh hak dilindungi.</span><div className="footer-social" aria-label="Media sosial ECC"><a href="https://www.instagram.com/ecc.co.id" aria-label="Instagram ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8A4 4 0 0 1 16 11.37m1.5-4.87h.01" /></svg></a><a href="https://id.linkedin.com/company/ecccoid" aria-label="LinkedIn ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2a2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6M2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg></a><a href="https://www.facebook.com/ecccoid" aria-label="Facebook ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a><a href="https://www.youtube.com/channel/UCpZ8jpedlSssDIbT9344N6Q" aria-label="YouTube ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 17a24.1 24.1 0 0 1 0-10a2 2 0 0 1 1.4-1.4a49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.1 24.1 0 0 1 0 10a2 2 0 0 1-1.4 1.4a49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17" /><path d="m10 15l5-3l-5-3z" /></svg></a></div></div>
+        </footer>
+      </section>
     </main>
-    <footer className="public-footer">
-      <div className="footer-main">
-        <div className="footer-about"><Brand linked={false} /><p>Future Quest adalah perjalanan belajar interaktif dalam program SIAP IMPACT 2026. Jelajahi stage, kerjakan tantangan, dan bangun dampakmu.</p></div>
-        <nav aria-label="Navigasi Future Quest"><h2>Future Quest</h2><a href="#journey">Tentang</a><a href="#stages">Tiga stage</a><a href="/demo">Coba demo</a></nav>
-        <nav aria-label="Ekosistem ECC"><h2>Ekosistem ECC</h2><a href="https://ecc.co.id/">Situs ECC</a><a href="https://ecc.co.id/products/opa">Career Match Engine</a><a href="https://ecc.co.id/products/oas">Online Assessment &amp; Selection</a></nav>
-        <div className="footer-contact"><h2>Kontak</h2><p><MapPin size={18} aria-hidden="true" /><span><strong>Gedung PDIN, Yogyakarta</strong><br /><span className="footer-address-detail">Lantai 2, Jl. C. Simanjuntak No. 19, Terban, Daerah Istimewa Yogyakarta 55223, Indonesia</span></span></p><a href="mailto:business@ecc.co.id"><EnvelopeSimple size={18} aria-hidden="true" />business@ecc.co.id</a></div>
-      </div>
-      <div className="footer-bottom"><span>© 2026 PT Engineering Career Center. Seluruh hak dilindungi.</span><div className="footer-social" aria-label="Media sosial ECC"><a href="https://www.instagram.com/ecc.co.id" aria-label="Instagram ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8A4 4 0 0 1 16 11.37m1.5-4.87h.01" /></svg></a><a href="https://id.linkedin.com/company/ecccoid" aria-label="LinkedIn ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2a2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6M2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg></a><a href="https://www.facebook.com/ecccoid" aria-label="Facebook ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a><a href="https://www.youtube.com/channel/UCpZ8jpedlSssDIbT9344N6Q" aria-label="YouTube ECC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 17a24.1 24.1 0 0 1 0-10a2 2 0 0 1 1.4-1.4a49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.1 24.1 0 0 1 0 10a2 2 0 0 1-1.4 1.4a49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17" /><path d="m10 15l5-3l-5-3z" /></svg></a></div></div>
-    </footer>
   </div>;
 }

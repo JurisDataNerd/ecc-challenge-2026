@@ -1,31 +1,29 @@
 import React from 'react';
-import { PathCode } from '../../types';
+import { PathCode, HeroGender } from '../../types';
+import { getHeroSprite, getSavedHeroGender } from '../../data/heroCharacters';
 
 interface HeroBattleSpriteProps {
   pathCode: PathCode;
+  gender?: HeroGender;
   actionState?: 'idle' | 'attack' | 'hit' | 'victory';
   size?: number;
 }
 
 export const HeroBattleSprite: React.FC<HeroBattleSpriteProps> = ({
   pathCode,
+  gender,
   actionState = 'idle',
   size = 120
 }) => {
-  const spriteMap: Record<PathCode, string> = {
-    professional: '/assets/dungeon/hero_knight_spritesheet.png',
-    social_impact: '/assets/dungeon/hero_mage_spritesheet.png',
-    business: '/assets/dungeon/hero_assassin_spritesheet.png'
-  };
-
-  const spriteUrl = spriteMap[pathCode] || spriteMap.professional;
+  const activeGender = gender || getSavedHeroGender();
+  const spriteUrl = getHeroSprite(pathCode, activeGender);
   const isAttack = actionState === 'attack';
   const isHit = actionState === 'hit';
   const isVictory = actionState === 'victory';
 
   // Row 0 = Idle (0px), Row 2 = Attack (-96px)
   const rowY = isAttack ? -96 : 0;
-  const scale = (size / 48) * 1.5;
+  const scale = (size / 48) * 1.85;
 
   return (
     <div 
