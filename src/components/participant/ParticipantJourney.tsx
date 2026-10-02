@@ -8,6 +8,7 @@ import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
 import { JourneyDialog } from '../ui/JourneyDialog';
 import { GameWorld } from '../../ui/game-world';
+import { getHeroAvatar, getHeroSprite, getHeroConfig, getSavedHeroGender, saveHeroGender, type HeroGender } from '../../data/heroCharacters';
 
 import type { ParticipantDemoState } from '../../lib/progress';
 
@@ -37,6 +38,8 @@ export function ParticipantJourney({
   storageError: string | null;
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
+  const [heroGender, setHeroGender] = useState<HeroGender>(() => getSavedHeroGender());
+  const heroConfig = getHeroConfig(currentPath, heroGender);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [pausePassportOpen, setPausePassportOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
@@ -98,6 +101,32 @@ export function ParticipantJourney({
         <img className="brand-mark" src="/assets/ecc-logo.png" alt="" />
         <div className="brand-copy"><span>ECC · SIAP IMPACT 2026</span><strong>FUTURE QUEST</strong></div>
         <div className="topbar-spacer" />
+        {demo.onboarded && (
+          <div className="flex items-center gap-2 bg-slate-900/90 border border-amber-500/40 rounded-full px-2.5 py-1 shadow-sm">
+            <img 
+              src={getHeroAvatar(currentPath, heroGender)} 
+              alt={heroConfig.characterName} 
+              className="w-7 h-7 rounded-full border border-amber-400 object-cover shadow-sm"
+              title={`${heroConfig.characterName} (${heroConfig.title})`}
+            />
+            <div className="flex flex-col text-left leading-tight hidden sm:flex">
+              <span className="text-[11px] font-bold text-amber-300 font-rpg">{heroConfig.characterName}</span>
+              <span className="text-[9px] text-slate-400 font-mono">{heroConfig.title}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const next = heroGender === 'male' ? 'female' : 'male';
+                setHeroGender(next);
+                saveHeroGender(next);
+              }}
+              className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 cursor-pointer transition-all active:scale-95 ml-1"
+              title="Ganti Gender Karakter (Laki-laki / Perempuan)"
+            >
+              {heroGender === 'male' ? '♂ L' : '♀ P'}
+            </button>
+          </div>
+        )}
         {demo.onboarded && <span className="track-chip"><span />{trackLabel(currentPath)}</span>}
         {allowStaffDemo && <label className="workspace-picker"><UserCircle size={17} /><span>Demo peran</span>
           <select aria-label="Pilih workspace" value={currentRole} onChange={event => onRoleChange(event.target.value as UserRole)}>
@@ -111,7 +140,14 @@ export function ParticipantJourney({
           <Onboarding currentPath={currentPath} onContinue={onCompleteOnboarding} />
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
-            <GameWorld key={activeStage.ordinal} stage={activeStage} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
+            <GameWorld 
+              key={`${activeStage.ordinal}-${currentPath}-${heroGender}`} 
+              stage={activeStage} 
+              paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} 
+              onOpenBoard={openBoard} 
+              onPause={openPause} 
+              heroSpritesheetUrl={getHeroSprite(currentPath, heroGender)}
+            />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
               <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada {activeStage.boardHint}. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
@@ -138,6 +174,7 @@ export function ParticipantJourney({
               key={activeQuiz?.id || 'no-quiz'}
               quiz={activeQuiz}
               currentPath={currentPath}
+              gender={heroGender}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               alreadyAttempted={Boolean(activeQuiz && demo.quizAttempts.includes(activeQuiz.id))}
               readOnly={activeGate.readOnly}
@@ -184,9 +221,16 @@ export function ParticipantJourney({
 
 function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onContinue: (path: PathCode, futureBase: FutureBase) => void }) {
   const [path, setPath] = useState<PathCode>(currentPath);
+  const [gender, setGender] = useState<HeroGender>(() => getSavedHeroGender());
   const [direction, setDirection] = useState('');
   const [target90d, setTarget90d] = useState('');
   const selected = OFFICIAL_PATHS[path];
+  const activeHero = getHeroConfig(path, gender);
+
+  const handleGenderSelect = (newGender: HeroGender) => {
+    setGender(newGender);
+    saveHeroGender(newGender);
+  };
 
   return (
     <section className="onboarding-layout">
@@ -201,8 +245,49 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
       </div>
       <form className="onboarding-form" onSubmit={event => { event.preventDefault(); if (!direction.trim() || !target90d.trim()) return; onContinue(path, { direction: direction.trim(), target90d: target90d.trim(), skills: [], support: '' }); }}>
         
-        <h2>Pilih jalur perjalanan</h2>
-        <p className="muted-copy">Tentukan fokusmu, lalu catat satu komitmen untuk 90 hari ke depan.</p>
+        <h2>Pilih jalur & karakter hero</h2>
+        <p className="muted-copy">Tentukan fokus track dan persona karakter petualangmu.</p>
+
+        {/* Gender Selector with FF Avatar Preview */}
+        <div className="p-3 bg-slate-900/90 border border-slate-700 rounded-xl mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img 
+              src={activeHero.avatarUrl} 
+              alt={activeHero.characterName} 
+              className="w-12 h-12 rounded-full border-2 border-amber-400 object-cover shadow-md"
+            />
+            <div>
+              <div className="font-bold text-amber-300 text-sm font-rpg">{activeHero.characterName}</div>
+              <div className="text-xs text-slate-300 font-mono">{activeHero.title}</div>
+            </div>
+          </div>
+
+          <div className="flex gap-1.5" role="radiogroup" aria-label="Pilih Gender Hero">
+            <button
+              type="button"
+              onClick={() => handleGenderSelect('male')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                gender === 'male' 
+                  ? 'bg-sky-600 border-sky-400 text-white shadow-sm' 
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ♂ Laki-laki
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGenderSelect('female')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                gender === 'female' 
+                  ? 'bg-rose-600 border-rose-400 text-white shadow-sm' 
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ♀ Perempuan
+            </button>
+          </div>
+        </div>
+
         <div className="track-options" role="radiogroup" aria-label="Pilih track program">
           {Object.values(OFFICIAL_PATHS).map(option => <button type="button" key={option.code} className={`track-option ${path === option.code ? 'selected' : ''}`} onClick={() => setPath(option.code)} role="radio" aria-checked={path === option.code}>
             <span className="track-option-icon" style={{ color: option.themeColor }}>{path === option.code ? <Check size={18} /> : <Compass size={18} />}</span>

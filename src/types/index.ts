@@ -1,6 +1,7 @@
 export type UserRole = 'participant' | 'mentor' | 'admin';
 
 export type PathCode = 'professional' | 'social_impact' | 'business';
+export type HeroGender = 'male' | 'female';
 
 export interface PathInfo {
   code: PathCode;
@@ -33,6 +34,7 @@ export interface Enrollment {
   id: string;
   profileId: string;
   pathCode: PathCode | null;
+  heroGender?: HeroGender;
   isPathLocked: boolean;
   status: 'active' | 'eliminated' | 'finalist';
   totalXp: number;

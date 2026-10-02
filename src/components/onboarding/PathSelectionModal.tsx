@@ -8,6 +8,7 @@ import {
 import { PathCode, FutureBase } from '../../types';
 import { OFFICIAL_PATHS } from '../../data/mockQuests';
 import { PixelModalFrame } from '../ui/PixelModalFrame';
+import { getHeroAvatar, getHeroSprite, getHeroConfig, getSavedHeroGender, saveHeroGender, type HeroGender } from '../../data/heroCharacters';
 
 interface PathSelectionModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
   if (!isOpen) return null;
 
   const [selectedPath, setSelectedPath] = useState<PathCode>('professional');
+  const [selectedGender, setSelectedGender] = useState<HeroGender>(() => getSavedHeroGender());
   const [direction, setDirection] = useState<string>('Mengembangkan kepemimpinan operasional dan manajemen strategis');
   const [target90d, setTarget90d] = useState<string>('Menyelesaikan program percontohan dengan validasi lapangan');
   const [selectedSkills, setSelectedSkills] = useState<string[]>(['Analisis Masalah', 'Kepemimpinan']);
@@ -51,6 +53,7 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
 
   const handleConfirm = () => {
     if (!isLockedWarningAccepted) return;
+    saveHeroGender(selectedGender);
     onConfirmPath(selectedPath, {
       direction,
       target90d,
@@ -100,15 +103,52 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
         </>
       }
     >
+      {/* Gender Persona Switcher Bar */}
+      <div className="mb-4 p-3 bg-slate-950/80 border border-slate-700/80 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-inner">
+        <div className="flex items-center gap-2">
+          <span className="font-pixel text-[9px] text-amber-400 uppercase tracking-wider">
+            PERSONA KARAKTER:
+          </span>
+          <span className="text-xs text-slate-300 font-sans">
+            Pilih gender untuk karakter dan spritesheet tokomu
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedGender('male')}
+            className={`px-3.5 py-1.5 rounded text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedGender === 'male'
+                ? 'bg-sky-600/90 border-sky-400 text-white shadow-pixel-sm'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>♂</span>
+            <span>Laki-laki</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedGender('female')}
+            className={`px-3.5 py-1.5 rounded text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedGender === 'female'
+                ? 'bg-rose-600/90 border-rose-400 text-white shadow-pixel-sm'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>♀</span>
+            <span>Perempuan</span>
+          </button>
+        </div>
+      </div>
+
       {/* 3 RPG Class Selection Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         {Object.values(OFFICIAL_PATHS).map((path) => {
           const isSelected = selectedPath === path.code;
-          const spriteSrc = path.code === 'social_impact'
-            ? '/assets/dungeon/hero_mage_spritesheet.png'
-            : path.code === 'business'
-            ? '/assets/dungeon/hero_assassin_spritesheet.png'
-            : '/assets/dungeon/hero_knight_spritesheet.png';
+          const heroCfg = getHeroConfig(path.code, selectedGender);
+          const avatarUrl = getHeroAvatar(path.code, selectedGender);
+          const spriteSrc = getHeroSprite(path.code, selectedGender);
 
           return (
             <div
@@ -139,16 +179,26 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
                   {path.accentBadge}
                 </span>
 
-                <h3 className="font-rpg text-base md:text-lg font-bold text-amber-300 mt-2 drop-shadow-[0_1px_0_#000]">
-                  {path.title}
-                </h3>
-                <p className="font-pixel text-[8px] text-slate-400 mt-0.5">
-                  ROLE: {path.archetypeRole.toUpperCase()}
-                </p>
+                <div className="flex items-center gap-2.5 mt-2">
+                  <img 
+                    src={avatarUrl} 
+                    alt={heroCfg.characterName} 
+                    className="w-10 h-10 rounded-full border-2 border-amber-400 object-cover shadow-sm"
+                  />
+                  <div>
+                    <h3 className="font-rpg text-base md:text-lg font-bold text-amber-300 drop-shadow-[0_1px_0_#000]">
+                      {heroCfg.characterName}
+                    </h3>
+                    <p className="font-pixel text-[8px] text-slate-400">
+                      {heroCfg.title.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Animated Class Pixel Sprite Preview */}
                 <div className="my-3 flex items-center justify-center h-24 bg-[#03060c] border-2 border-slate-700 shadow-[inset_1px_1px_0_#000] relative overflow-hidden">
                   <div 
+                    key={`${path.code}-${selectedGender}`}
                     className="w-12 h-12 origin-center scale-[1.75]"
                     style={{
                       backgroundImage: `url('${spriteSrc}')`,
@@ -161,7 +211,7 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                  {path.description}
+                  {heroCfg.description}
                 </p>
               </div>
 

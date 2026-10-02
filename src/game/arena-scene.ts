@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { L3_BRIDGE, TREE_BASES, movePlayer, touchesTerrain } from './terrain';
 import type { ParticipantStage, StageOrdinal } from '../data/participantStages';
 
+import { getHeroSprite, getSavedHeroGender } from '../data/heroCharacters';
+
 export type StageBoard = { id: StageOrdinal; name: string; locked: boolean };
 type Movement = { x: number; y: number };
 const MAP_SIZE = 640;
@@ -21,6 +23,7 @@ export class ArenaScene extends Phaser.Scene {
     private readonly onNearbyBoard: (board: StageBoard | null) => void,
     private readonly onBoardInteract: (board: StageBoard) => void,
     private readonly onReady: () => void,
+    private readonly heroSpritesheetUrl?: string,
   ) {
     super(`stage-${stage.ordinal}`);
   }
@@ -28,7 +31,8 @@ export class ArenaScene extends Phaser.Scene {
   preload() {
     this.load.image('world-map', this.stage.mapPath);
     this.load.image('player-shadow', '/assets/mixel/MainCharacter%20v.1.0/MainC_Shadow.png');
-    this.load.spritesheet('knight', '/assets/dungeon/hero_knight_spritesheet.png', { frameWidth: 48, frameHeight: 48 });
+    const heroSprite = this.heroSpritesheetUrl || getHeroSprite('professional', getSavedHeroGender());
+    this.load.spritesheet('knight', heroSprite, { frameWidth: 48, frameHeight: 48 });
   }
 
   create() {

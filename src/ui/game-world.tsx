@@ -7,11 +7,12 @@ import type { StageBoard } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, paused, onOpenBoard, onPause }: {
+export function GameWorld({ stage, paused, onOpenBoard, onPause, heroSpritesheetUrl }: {
   stage: ParticipantStage;
   paused: boolean;
   onOpenBoard: () => void;
   onPause: () => void;
+  heroSpritesheetUrl?: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{ interact: () => void } | null>(null);
@@ -55,7 +56,14 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause }: {
       ]);
       const parent = mountRef.current;
       if (disposed || !parent) return;
-      const scene = new Scene(stage, () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current), setNearbyBoard, () => { if (!pausedRef.current) onOpenBoard(); }, () => setGameReady(true));
+      const scene = new Scene(
+        stage, 
+        () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current), 
+        setNearbyBoard, 
+        () => { if (!pausedRef.current) onOpenBoard(); }, 
+        () => setGameReady(true),
+        heroSpritesheetUrl
+      );
       sceneRef.current = scene;
       game = new PhaserModule.Game({
         type: PhaserModule.AUTO,
