@@ -3,14 +3,15 @@ import type Phaser from 'phaser';
 import { Pause, Trophy } from '@phosphor-icons/react';
 import type { ParticipantStage } from '../data/participantStages';
 import { movementInput } from '../game/terrain';
-import type { StageBoard } from '../game/arena-scene';
+import type { StageEncounter } from '../game/arena-scene';
 
 type Movement = { x: number; y: number };
 
-export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboard, heroSpritesheetUrl }: {
+export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onOpenLeaderboard, heroSpritesheetUrl }: {
   stage: ParticipantStage;
   paused: boolean;
-  onOpenBoard: () => void;
+  quizDefeats: readonly string[];
+  onOpenQuiz: (quizId: string) => void;
   onPause: () => void;
   onOpenLeaderboard?: () => void;
   heroSpritesheetUrl?: string;
@@ -21,11 +22,13 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboa
   useEffect(() => { const media=matchMedia('(pointer:coarse) and (orientation:portrait)');const change=()=>setPortrait(media.matches);media.addEventListener('change',change);return()=>media.removeEventListener('change',change); }, []);
   const pausedRef = useRef(paused);
   pausedRef.current = paused || portrait;
+  const defeatsRef = useRef(quizDefeats);
+  defeatsRef.current = quizDefeats;
   const movementRef = useRef<Movement>({ x: 0, y: 0 });
   const keyboardMovementRef = useRef<Movement>({ x: 0, y: 0 });
   const pointerIdRef = useRef<number | null>(null);
   const [stickPosition, setStickPosition] = useState<Movement>({ x: 0, y: 0 });
-  const [nearbyBoard, setNearbyBoard] = useState<StageBoard | null>(null);
+  const [nearbyEncounter, setNearbyEncounter] = useState<StageEncounter | null>(null);
   const [gameReady, setGameReady] = useState(false);
 
   const updateMovement = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -58,10 +61,11 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboa
       const parent = mountRef.current;
       if (disposed || !parent) return;
       const scene = new Scene(
-        stage, 
-        () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current), 
-        setNearbyBoard, 
-        () => { if (!pausedRef.current) onOpenBoard(); }, 
+        stage,
+        () => movementInput(keyboardMovementRef.current,movementRef.current,pausedRef.current),
+        () => defeatsRef.current,
+        setNearbyEncounter,
+        encounter => { if (!pausedRef.current) onOpenQuiz(encounter.id); },
         () => setGameReady(true),
         heroSpritesheetUrl
       );
@@ -85,7 +89,7 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboa
       game?.destroy(true);
       sceneRef.current = null;
     };
-  }, [stage, onOpenBoard]);
+  }, [stage, onOpenQuiz, heroSpritesheetUrl]);
 
   useEffect(() => {
     const pressed = new Set<string>();
@@ -176,9 +180,9 @@ export function GameWorld({ stage, paused, onOpenBoard, onPause, onOpenLeaderboa
         <span className="stick-caption">GERAK</span>
       </div>
 
-      {nearbyBoard && (
-        <button className="interact-button" disabled={paused} aria-label={`Interaksi dengan ${nearbyBoard.name}`} onClick={() => { if (!pausedRef.current) sceneRef.current?.interact(); }}>
-          <span className="interact-key">E</span><span>Interaksi</span>
+      {nearbyEncounter && (
+        <button className="interact-button" disabled={paused || nearbyEncounter.locked} aria-label={nearbyEncounter.locked ? `${nearbyEncounter.name} terkunci` : `Interaksi dengan ${nearbyEncounter.name}`} onClick={() => { if (!pausedRef.current) sceneRef.current?.interact(); }}>
+          <span className="interact-key">E</span><span>{nearbyEncounter.locked ? 'Selesaikan dua kuis dulu' : `Tantang ${nearbyEncounter.name}`}</span>
         </button>
       )}
     </section>

@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import { L3_BRIDGE, TREE_BASES, movePlayer, touchesTerrain } from './terrain';
-import type { ParticipantStage, StageOrdinal } from '../data/participantStages';
+import type { ParticipantStage } from '../data/participantStages';
+import { STAGE_QUIZZES } from '../data/mockQuests';
+import { STAGE_MONSTERS, monsterArtPath, type StageMonster } from '../data/stageMonsters';
 
 import { getHeroSprite, getSavedHeroGender } from '../data/heroCharacters';
 
-export type StageBoard = { id: StageOrdinal; name: string; locked: boolean };
+export type StageEncounter = { id: string; name: string; locked: boolean };
 type Movement = { x: number; y: number };
 const MAP_SIZE = 640;
-const BOARD_RADIUS = 100;
+const ENCOUNTER_RADIUS = 100;
 
 export class ArenaScene extends Phaser.Scene {
   private player: Phaser.GameObjects.Sprite | null = null;
@@ -15,13 +17,15 @@ export class ArenaScene extends Phaser.Scene {
   private mapPixels: Uint8ClampedArray | null = null;
   private mapWidth = MAP_SIZE;
   private mapHeight = MAP_SIZE;
-  private nearbyBoard: StageBoard | null = null;
+  private nearbyEncounter: StageEncounter | null = null;
+  private monsterSprites: { monster: StageMonster; sprite: Phaser.GameObjects.Image }[] = [];
 
   constructor(
     private readonly stage: ParticipantStage,
     private readonly readMovement: () => Movement,
-    private readonly onNearbyBoard: (board: StageBoard | null) => void,
-    private readonly onBoardInteract: (board: StageBoard) => void,
+    private readonly readDefeats: () => readonly string[],
+    private readonly onNearbyEncounter: (encounter: StageEncounter | null) => void,
+    private readonly onEncounterInteract: (encounter: StageEncounter) => void,
     private readonly onReady: () => void,
     private readonly heroSpritesheetUrl?: string,
   ) {
@@ -33,6 +37,7 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('player-shadow', '/assets/mixel/MainCharacter%20v.1.0/MainC_Shadow.png');
     const heroSprite = this.heroSpritesheetUrl || getHeroSprite('professional', getSavedHeroGender());
     this.load.spritesheet('knight', heroSprite, { frameWidth: 48, frameHeight: 48 });
+    for (const monster of STAGE_MONSTERS[this.stage.ordinal]) this.load.image(monster.art, monsterArtPath(monster.art));
   }
 
   create() {
@@ -54,7 +59,7 @@ export class ArenaScene extends Phaser.Scene {
     this.drawBridge();
     this.drawCanopies(source);
     this.createAnimations();
-    this.drawBoard();
+    this.drawMonsters();
     this.spawnPlayer();
     this.onReady();
   }
@@ -64,7 +69,9 @@ export class ArenaScene extends Phaser.Scene {
     const input = this.readMovement();
     const {x,y}=input;
     if (Math.hypot(x,y)>0.08) {
-      const next=movePlayer(this.player,input,delta,this.stage.worldSize,point => touchesTerrain(this.stage.ordinal,this.stage.mapScale,point,this.mapPixels,this.mapWidth,this.mapHeight));
+      const next=movePlayer(this.player,input,delta,this.stage.worldSize,point =>
+        touchesTerrain(this.stage.ordinal,this.stage.mapScale,point,this.mapPixels,this.mapWidth,this.mapHeight)
+        || this.monsterSprites.some(({monster}) => Phaser.Math.Distance.Between(point.x,point.y,monster.x,monster.y) < (monster.boss ? 45 : 27)));
       const moved=next.x!==this.player.x || next.y!==this.player.y;
       this.player.setPosition(next.x,next.y).anims.play(moved?'knight-walk':'knight-idle',true);
       if (x) this.player.setFlipX(x<0);
@@ -72,17 +79,22 @@ export class ArenaScene extends Phaser.Scene {
 
     this.player.setDepth(this.player.y);
     this.shadow?.setPosition(this.player.x, this.player.y - 4).setDepth(this.player.y - 1);
-    const board = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stage.board.x, this.stage.board.y) <= BOARD_RADIUS
-      ? { id: this.stage.ordinal as StageOrdinal, name: this.stage.boardName, locked: false }
-      : null;
-    if (board?.id !== this.nearbyBoard?.id) {
-      this.nearbyBoard = board;
-      this.onNearbyBoard(board);
+    const defeats = this.readDefeats();
+    const bossUnlocked = STAGE_MONSTERS[this.stage.ordinal].slice(0,2).every(monster => defeats.includes(monster.quizId));
+    for (const {monster,sprite} of this.monsterSprites) sprite.setTint(defeats.includes(monster.quizId) ? 0xb7d5ba : monster.boss && !bossUnlocked ? 0x8094a1 : 0xffffff);
+    const nearby: {distance:number; encounter:StageEncounter}[] = this.monsterSprites.map(({monster}) => ({
+      distance: Phaser.Math.Distance.Between(this.player!.x,this.player!.y,monster.x,monster.y),
+      encounter: {id:monster.quizId,name:STAGE_QUIZZES.find(quiz => quiz.id === monster.quizId)?.enemyName || 'Monster',locked:Boolean(monster.boss && !bossUnlocked)},
+    }));
+    const encounter = nearby.filter(item => item.distance <= ENCOUNTER_RADIUS).sort((a,b) => a.distance-b.distance)[0]?.encounter || null;
+    if (encounter?.id !== this.nearbyEncounter?.id || encounter?.locked !== this.nearbyEncounter?.locked) {
+      this.nearbyEncounter = encounter;
+      this.onNearbyEncounter(encounter);
     }
   }
 
   interact() {
-    if (this.nearbyBoard) this.onBoardInteract(this.nearbyBoard);
+    if (this.nearbyEncounter && !this.nearbyEncounter.locked) this.onEncounterInteract(this.nearbyEncounter);
   }
 
   private spawnPlayer() {
@@ -139,17 +151,16 @@ export class ArenaScene extends Phaser.Scene {
     this.anims.create({ key: 'knight-walk', frames: this.anims.generateFrameNumbers('knight', { start: 4, end: 7 }), frameRate: 8, repeat: -1 });
   }
 
-  private drawBoard() {
-    const { x, y } = this.stage.board;
-    const depth = y + 28;
-    const art = this.add.graphics().setDepth(depth);
-    art.fillStyle(0x392e27, 0.28).fillEllipse(x, y + 32, 65, 19);
-    art.fillStyle(0x6c4933).fillRect(x - 4, y + 8, 8, 38);
-    art.fillStyle(0xf3c45e).fillRect(x - 50, y - 25, 100, 42);
-    art.lineStyle(4, 0x392e27).strokeRect(x - 50, y - 25, 100, 42);
-    art.fillStyle(Phaser.Display.Color.HexStringToColor(this.stage.accent).color).fillRect(x - 50, y - 25, 100, 7);
-    this.add.text(x, y - 2, `${this.stage.phase} ${this.stage.name.toUpperCase()}`, {
-      fontFamily: '"Pixelify Sans", monospace', fontSize: '14px', fontStyle: 'bold', color: '#17324d',
-    }).setOrigin(0.5).setDepth(depth + 1);
+  private drawMonsters() {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    STAGE_MONSTERS[this.stage.ordinal].forEach((monster,index) => {
+      const source = this.textures.get(monster.art).getSourceImage() as HTMLImageElement;
+      const height = monster.boss ? 110 : 82;
+      const width = Math.min(monster.boss ? 210 : 100, height * source.width / source.height);
+      this.add.ellipse(monster.x,monster.y-3,width*.7,16,0x0b2d54,.3).setDepth(monster.y-2);
+      const sprite = this.add.image(monster.x,monster.y,monster.art).setOrigin(.5,1).setDisplaySize(width,height).setDepth(monster.y);
+      this.monsterSprites.push({monster,sprite});
+      if (!reducedMotion) this.tweens.add({targets:sprite,y:monster.y-4,duration:1500+index*180,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    });
   }
 }

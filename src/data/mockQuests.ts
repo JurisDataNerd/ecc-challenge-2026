@@ -39,7 +39,7 @@ export const STAGE_CONFIGS = [
     title: 'Tahap 1: Discover & Empathize',
     theme: 'Eksplorasi Lapangan & Validasi Masalah',
     quotaTarget: '100 → 50 Peserta',
-    enemyCount: 1,
+    enemyCount: 3,
     dates: '15 Okt 2026',
     objective: 'Identifikasi akar persoalan mendasar dan lakukan wawancara mendalam bersama narasumber relevan.'
   },
@@ -48,7 +48,7 @@ export const STAGE_CONFIGS = [
     title: 'Tahap 2: Define, Ideate & Prototype',
     theme: 'Konseptualisasi Solusi & Pengujian Awal',
     quotaTarget: '50 → 25 Peserta',
-    enemyCount: 2,
+    enemyCount: 3,
     dates: '22 Okt 2026',
     objective: 'Ubah wawasan masalah menjadi prototipe solusi nyata dan kumpulkan feedback dari calon pengguna.'
   },
@@ -66,7 +66,7 @@ export const STAGE_CONFIGS = [
     title: 'Tahap 4: Impact & Celebration',
     theme: 'Kelulusan, Komitmen & Altar Dampak',
     quotaTarget: 'Finalis Terpilih',
-    enemyCount: 0,
+    enemyCount: 3,
     dates: '05 Nov 2026',
     objective: 'Rayakan pencapaian, rumuskan komitmen keberlanjutan dampak, dan resmikan kelulusan ekspedisi.'
   },
@@ -96,7 +96,7 @@ export const TRACK_STAGE_FOCUS: Record<PathCode, Record<StageOrdinal, string>> =
 };
 
 export const STAGE_QUIZZES: QuizQuestion[] = [
-  // Stage 1 (1 Enemy)
+  // Stage 1
   {
     id: 'quiz-s1-e1',
     stageOrdinal: 1,
@@ -127,8 +127,30 @@ export const STAGE_QUIZZES: QuizQuestion[] = [
     ],
     xpReward: 60
   },
+  {
+    id: 'quiz-s1-e2', stageOrdinal: 1, enemyId: 'enemy-s1-2', enemyName: 'Pengintai Sungai',
+    title: 'Wawancara Tanpa Mengarahkan Jawaban',
+    scenario: 'Anda ingin memahami mengapa peserta kesulitan menyelesaikan pelatihan daring. Seorang rekan menyarankan bertanya, "Aplikasi kami terlalu rumit, bukan?" kepada semua responden.',
+    question: 'Pertanyaan mana yang paling membantu Anda menemukan pengalaman responden tanpa menggiring jawabannya?',
+    options: [
+      { id: 'opt-a', text: 'Ceritakan langkah terakhir saat Anda mencoba menyelesaikan pelatihan. Di bagian mana Anda berhenti?', isCorrect: true, explanation: 'Pertanyaan terbuka tentang kejadian nyata memberi ruang bagi responden menjelaskan hambatan dengan bahasanya sendiri.' },
+      { id: 'opt-b', text: 'Anda setuju bahwa tampilan aplikasi kami terlalu rumit, kan?', isCorrect: false, explanation: 'Pertanyaan ini memasukkan dugaan pewawancara ke dalam jawaban responden.' },
+      { id: 'opt-c', text: 'Jika aplikasinya lebih menarik, Anda pasti akan menyelesaikan pelatihan?', isCorrect: false, explanation: 'Pertanyaan hipotetis tidak menjelaskan hambatan yang benar-benar terjadi.' },
+    ], xpReward: 10,
+  },
+  {
+    id: 'quiz-s1-e3', stageOrdinal: 1, enemyId: 'enemy-s1-3', enemyName: 'Bayangan Asumsi',
+    title: 'Memeriksa Masalah dari Berbagai Sumber',
+    scenario: 'Tiga peserta menyebut biaya internet sebagai hambatan utama, tetapi catatan kehadiran menunjukkan banyak peserta berhenti pada tugas praktik kedua.',
+    question: 'Apa langkah validasi berikutnya sebelum menetapkan akar masalah?',
+    options: [
+      { id: 'opt-a', text: 'Bandingkan wawancara, catatan penggunaan, dan pengamatan tugas; lalu tanyakan penyebab berhenti pada titik tersebut.', isCorrect: true, explanation: 'Triangulasi bukti membantu membedakan dugaan, hambatan yang dilaporkan, dan perilaku nyata.' },
+      { id: 'opt-b', text: 'Pilih biaya internet sebagai akar masalah karena disebut paling sering dalam wawancara awal.', isCorrect: false, explanation: 'Sampel kecil dan satu sumber belum cukup untuk menyimpulkan akar masalah.' },
+      { id: 'opt-c', text: 'Abaikan wawancara karena data kehadiran selalu lebih akurat.', isCorrect: false, explanation: 'Data perilaku menunjukkan titik berhenti, tetapi belum menjelaskan alasannya.' },
+    ], xpReward: 10,
+  },
 
-  // Stage 2 (2 Enemies)
+  // Stage 2
   {
     id: 'quiz-s2-e1',
     stageOrdinal: 2,
@@ -183,8 +205,19 @@ export const STAGE_QUIZZES: QuizQuestion[] = [
     ],
     xpReward: 80
   },
+  {
+    id: 'quiz-s2-e3', stageOrdinal: 2, enemyId: 'enemy-s2-3', enemyName: 'Penjaga Bengkel',
+    title: 'Mengukur Uji Prototipe Kecil',
+    scenario: 'Lima calon pengguna mencoba prototipe pendaftaran. Empat orang memerlukan bantuan untuk menemukan tombol lanjut, tetapi semuanya mengatakan tampilannya menarik.',
+    question: 'Perbaikan apa yang paling tepat untuk iterasi berikutnya?',
+    options: [
+      { id: 'opt-a', text: 'Perjelas jalur menuju tombol lanjut, lalu uji kembali apakah pengguna dapat menyelesaikan tugas tanpa bantuan.', isCorrect: true, explanation: 'Keberhasilan tugas tanpa bantuan adalah bukti yang lebih berguna daripada pujian umum terhadap tampilan.' },
+      { id: 'opt-b', text: 'Pertahankan alur karena semua pengguna menyukai tampilannya.', isCorrect: false, explanation: 'Pujian tidak menghapus hambatan yang terlihat saat pengguna mencoba tugas.' },
+      { id: 'opt-c', text: 'Tambahkan lebih banyak fitur sebelum menguji alur pendaftaran lagi.', isCorrect: false, explanation: 'Fitur baru belum menjawab hambatan yang sudah teramati.' },
+    ], xpReward: 10,
+  },
 
-  // Stage 3 (3 Enemies)
+  // Stage 3
   {
     id: 'quiz-s3-e1',
     stageOrdinal: 3,
@@ -256,6 +289,41 @@ export const STAGE_QUIZZES: QuizQuestion[] = [
       }
     ],
     xpReward: 100
+  },
+
+  // Stage 4 — provisional demo content until ECC supplies official material.
+  {
+    id: 'quiz-s4-e1', stageOrdinal: 4, enemyId: 'enemy-s4-1', enemyName: 'Penanda Dampak',
+    title: 'Membedakan Kegiatan dan Dampak',
+    scenario: 'Program Anda melatih 100 peserta. Tim ingin mengklaim bahwa kesejahteraan mereka meningkat, tetapi hanya memiliki daftar hadir.',
+    question: 'Bukti tambahan apa yang diperlukan agar klaim dampak lebih kuat?',
+    options: [
+      { id: 'opt-a', text: 'Tetapkan kondisi awal, ukur perubahan hasil yang relevan setelah pelatihan, dan periksa faktor lain yang mungkin memengaruhinya.', isCorrect: true, explanation: 'Jumlah peserta menunjukkan keluaran kegiatan, sedangkan dampak memerlukan bukti perubahan hasil.' },
+      { id: 'opt-b', text: 'Gunakan jumlah kehadiran sebagai bukti bahwa kesejahteraan semua peserta meningkat.', isCorrect: false, explanation: 'Kehadiran saja tidak menunjukkan perubahan kesejahteraan.' },
+      { id: 'opt-c', text: 'Minta satu testimoni positif dan anggap mewakili semua peserta.', isCorrect: false, explanation: 'Satu kisah tidak cukup untuk mendukung klaim bagi seluruh peserta.' },
+    ], xpReward: 10,
+  },
+  {
+    id: 'quiz-s4-e2', stageOrdinal: 4, enemyId: 'enemy-s4-2', enemyName: 'Penjaga Keberlanjutan',
+    title: 'Menjaga Manfaat Setelah Program Selesai',
+    scenario: 'Uji coba solusi Anda berhasil, tetapi tim pelaksana sementara akan selesai bertugas bulan depan.',
+    question: 'Langkah mana yang paling membantu manfaat solusi bertahan?',
+    options: [
+      { id: 'opt-a', text: 'Sepakati penanggung jawab lokal, sumber daya yang tersedia, ukuran hasil, dan jadwal evaluasi setelah serah terima.', isCorrect: true, explanation: 'Keberlanjutan memerlukan kepemilikan, sumber daya, dan cara memeriksa hasil setelah tim awal pergi.' },
+      { id: 'opt-b', text: 'Umumkan keberhasilan tanpa menetapkan siapa yang menjalankan solusi berikutnya.', isCorrect: false, explanation: 'Tanpa pemilik operasional, manfaat mudah berhenti bersama tim awal.' },
+      { id: 'opt-c', text: 'Perluas program ke semua wilayah sebelum mengetahui biaya pemeliharaannya.', isCorrect: false, explanation: 'Skala tanpa rencana operasional dapat melemahkan hasil uji coba.' },
+    ], xpReward: 10,
+  },
+  {
+    id: 'quiz-s4-e3', stageOrdinal: 4, enemyId: 'enemy-s4-3', enemyName: 'Gerbang Masa Depan',
+    title: 'Komitmen Dampak 90 Hari',
+    scenario: 'Anda menyelesaikan perjalanan Future Quest dan ingin memastikan hasilnya berlanjut setelah kelulusan.',
+    question: 'Rencana 90 hari mana yang paling dapat dijalankan dan dievaluasi?',
+    options: [
+      { id: 'opt-a', text: 'Tetapkan satu hasil terukur, penanggung jawab, langkah bulanan, sumber daya, dan waktu meninjau bukti kemajuan.', isCorrect: true, explanation: 'Rencana konkret memiliki hasil, pemilik, langkah, sumber daya, dan titik evaluasi.' },
+      { id: 'opt-b', text: 'Berjanji menciptakan dampak sebesar mungkin tanpa tanggal atau ukuran keberhasilan.', isCorrect: false, explanation: 'Komitmen tanpa ukuran dan waktu sulit dijalankan maupun dinilai.' },
+      { id: 'opt-c', text: 'Menunggu peluang datang sebelum menentukan tindakan pertama.', isCorrect: false, explanation: 'Rencana 90 hari perlu tindakan awal yang berada dalam kendali peserta.' },
+    ], xpReward: 10,
   }
 ];
 
