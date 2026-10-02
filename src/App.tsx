@@ -32,7 +32,7 @@ export default function App() {
     finally { setLoggingOut(false); }
   };
   if (isParticipant && (auth.loading || !auth.session)) return <div className="experience-loading" role="status">Memeriksa sesi…</div>;
-  if (isDemo || isParticipant) return <div className="experience-program">
+  if (isDemo || isParticipant) return <div className={`experience-program ${/^\/(demo|play)\/stage\/[123]$/.test(path) ? 'is-playing' : ''}`}>
     <div className="experience-session"><a href="/" aria-label="Kembali ke beranda"><ArrowLeft size={15} /> Beranda</a><span>{isDemo ? 'Mode demo · progres simulasi' : `${auth.session?.user.email} ? progres simulasi`}</span>{isDemo ? <a href={auth.session ? "/play" : "/login"}>{auth.session ? "Lanjutkan perjalanan" : "Login peserta"}</a> : <button onClick={logout} disabled={loggingOut}>{loggingOut ? 'Keluar…' : 'Logout'}</button>}</div>
     {logoutError && <div className="session-error" role="alert">{logoutError}</div>}
     <div className="experience-program-body"><Suspense fallback={<div className="experience-loading" role="status">Menyiapkan ekspedisi…</div>}><ProgramApp key={isDemo ? 'demo' : auth.session!.user.id} mode={isDemo ? 'demo' : 'participant'} participantId={isDemo ? undefined : auth.session!.user.id} /></Suspense></div>

@@ -38,7 +38,9 @@ export function ParticipantJourney({
 }) {
   const [selectedPreview, setSelectedPreview] = useState<StageOrdinal>(1);
   const [pauseOpen, setPauseOpen] = useState(false);
+  const [pausePassportOpen, setPausePassportOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
+  const closePause = () => { setPauseOpen(false); setPausePassportOpen(false); };
   const [boardOpen, setBoardOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
   const [activeMission, setActiveMission] = useState<(typeof STAGE_BOSS_MISSIONS)[number] | null>(null);
@@ -109,22 +111,17 @@ export function ParticipantJourney({
           <Onboarding currentPath={currentPath} onContinue={onCompleteOnboarding} />
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
-            <header className="stage-toolbar">
-              <button className="button button-quiet stage-return" aria-label="Kembali ke peta ekspedisi" onClick={() => toggleView('expedition')}><ArrowLeft size={18} /><span>Peta ekspedisi</span></button>
-              <div className="stage-toolbar-title"><strong>{activeStage.phase} {activeStage.name}</strong><small>{trackLabel(currentPath)}</small></div>
-              <div className="stage-actions"><button className="button button-quiet" onClick={() => toggleView('passport')} aria-label="Buka Future Passport"><BookOpenText size={18} /><span>Passport</span></button><button className="button button-quiet" onClick={openPause}>Jeda <kbd>Esc</kbd></button></div>
-            </header>
-            <GameWorld key={activeStage.ordinal} stage={activeStage} readOnly={activeGate.readOnly} objective={objective} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
+            <GameWorld key={activeStage.ordinal} stage={activeStage} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
               <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada {activeStage.boardHint}. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
               <ControlsGuide />
               <footer className="dialog-actions"><span className="demo-note">Progres belajar disimpan sebagai simulasi di browser ini.</span><button className="button button-gold" onClick={beginStage}>Mulai menjelajah</button></footer>
             </JourneyDialog>}
-            {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={() => setPauseOpen(false)}>
-              <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">Permainan dijeda</h2><p>{objective}</p><ControlsGuide />
-              <p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName} {activeStage.boardHint}. Kamu bisa kembali ke peta kapan pun untuk berpindah stage.</p>
-              <footer className="pause-actions"><button className="button button-gold" onClick={() => setPauseOpen(false)}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => { setPauseOpen(false); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
+            {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={closePause}>
+              <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">{pausePassportOpen ? 'Future Passport' : 'Permainan dijeda'}</h2>
+              {pausePassportOpen ? <><p>{trackLabel(currentPath)} · {totalXp.toLocaleString('id-ID')} XP</p><BaseMilestones milestones={PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo))} /></> : <><div className="pause-brief"><strong>Brief stage</strong><p>{activeStage.description}</p><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p></div><p><strong>Langkah berikutnya:</strong> {objective}</p><ControlsGuide /><p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName} {activeStage.boardHint}.</p></>}
+              <footer className="pause-actions"><button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button><button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
             </JourneyDialog>}
             <QuestBoard
               isOpen={boardOpen}
