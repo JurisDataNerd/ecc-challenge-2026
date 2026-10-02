@@ -19,6 +19,9 @@ export class ArenaScene extends Phaser.Scene {
   private mapHeight = MAP_SIZE;
   private nearbyEncounter: StageEncounter | null = null;
   private monsterSprites: { monster: StageMonster; sprite: Phaser.GameObjects.Image }[] = [];
+  private bossShield: Phaser.GameObjects.Arc | null = null;
+  private isKnockedBack = false;
+  private lastKnockbackTime = 0;
 
   constructor(
     private readonly stage: ParticipantStage,
@@ -66,27 +69,47 @@ export class ArenaScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     if (!this.player) return;
-    const input = this.readMovement();
-    const {x,y}=input;
-    if (Math.hypot(x,y)>0.08) {
-      const next=movePlayer(this.player,input,delta,this.stage.worldSize,point =>
-        touchesTerrain(this.stage.ordinal,this.stage.mapScale,point,this.mapPixels,this.mapWidth,this.mapHeight)
-        || this.monsterSprites.some(({monster}) => Phaser.Math.Distance.Between(point.x,point.y,monster.x,monster.y) < (monster.boss ? 45 : 27)));
-      const moved=next.x!==this.player.x || next.y!==this.player.y;
-      this.player.setPosition(next.x,next.y).anims.play(moved?'knight-walk':'knight-idle',true);
-      if (x) this.player.setFlipX(x<0);
-    } else this.player.anims.play('knight-idle',true);
+
+    const defeats = this.readDefeats();
+    const bossUnlocked = STAGE_MONSTERS[this.stage.ordinal].slice(0, 2).every(monster => defeats.includes(monster.quizId));
+
+    if (this.bossShield) {
+      this.bossShield.setVisible(!bossUnlocked);
+    }
+
+    // Check boss barrier knockback trigger if player approaches locked boss
+    const bossEntry = this.monsterSprites.find(({ monster }) => monster.boss);
+    if (bossEntry && !bossUnlocked) {
+      const distToBoss = Phaser.Math.Distance.Between(this.player.x, this.player.y, bossEntry.monster.x, bossEntry.monster.y);
+      if (distToBoss < 85 && _time - this.lastKnockbackTime > 1100 && !this.isKnockedBack) {
+        this.triggerBossBarrierRepel(bossEntry.monster);
+        this.lastKnockbackTime = _time;
+      }
+    }
+
+    if (!this.isKnockedBack) {
+      const input = this.readMovement();
+      const { x, y } = input;
+      if (Math.hypot(x, y) > 0.08) {
+        const next = movePlayer(this.player, input, delta, this.stage.worldSize, point =>
+          touchesTerrain(this.stage.ordinal, this.stage.mapScale, point, this.mapPixels, this.mapWidth, this.mapHeight)
+          || this.monsterSprites.some(({ monster }) => Phaser.Math.Distance.Between(point.x, point.y, monster.x, monster.y) < (monster.boss ? (bossUnlocked ? 45 : 85) : 27)));
+        const moved = next.x !== this.player.x || next.y !== this.player.y;
+        this.player.setPosition(next.x, next.y).anims.play(moved ? 'knight-walk' : 'knight-idle', true);
+        if (x) this.player.setFlipX(x < 0);
+      } else this.player.anims.play('knight-idle', true);
+    }
 
     this.player.setDepth(this.player.y);
     this.shadow?.setPosition(this.player.x, this.player.y - 4).setDepth(this.player.y - 1);
-    const defeats = this.readDefeats();
-    const bossUnlocked = STAGE_MONSTERS[this.stage.ordinal].slice(0,2).every(monster => defeats.includes(monster.quizId));
-    for (const {monster,sprite} of this.monsterSprites) sprite.setTint(defeats.includes(monster.quizId) ? 0xb7d5ba : monster.boss && !bossUnlocked ? 0x8094a1 : 0xffffff);
-    const nearby: {distance:number; encounter:StageEncounter}[] = this.monsterSprites.map(({monster}) => ({
-      distance: Phaser.Math.Distance.Between(this.player!.x,this.player!.y,monster.x,monster.y),
-      encounter: {id:monster.quizId,name:STAGE_QUIZZES.find(quiz => quiz.id === monster.quizId)?.enemyName || 'Monster',locked:Boolean(monster.boss && !bossUnlocked)},
+    for (const { monster, sprite } of this.monsterSprites) {
+      sprite.setTint(defeats.includes(monster.quizId) ? 0xb7d5ba : monster.boss && !bossUnlocked ? 0x8094a1 : 0xffffff);
+    }
+    const nearby: { distance: number; encounter: StageEncounter }[] = this.monsterSprites.map(({ monster }) => ({
+      distance: Phaser.Math.Distance.Between(this.player!.x, this.player!.y, monster.x, monster.y),
+      encounter: { id: monster.quizId, name: STAGE_QUIZZES.find(quiz => quiz.id === monster.quizId)?.enemyName || 'Monster', locked: Boolean(monster.boss && !bossUnlocked) },
     }));
-    const encounter = nearby.filter(item => item.distance <= ENCOUNTER_RADIUS).sort((a,b) => a.distance-b.distance)[0]?.encounter || null;
+    const encounter = nearby.filter(item => item.distance <= ENCOUNTER_RADIUS).sort((a, b) => a.distance - b.distance)[0]?.encounter || null;
     if (encounter?.id !== this.nearbyEncounter?.id || encounter?.locked !== this.nearbyEncounter?.locked) {
       this.nearbyEncounter = encounter;
       this.onNearbyEncounter(encounter);
@@ -94,7 +117,16 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   interact() {
-    if (this.nearbyEncounter && !this.nearbyEncounter.locked) this.onEncounterInteract(this.nearbyEncounter);
+    if (this.nearbyEncounter) {
+      if (!this.nearbyEncounter.locked) {
+        this.onEncounterInteract(this.nearbyEncounter);
+      } else {
+        const bossEntry = this.monsterSprites.find(({ monster }) => monster.boss);
+        if (bossEntry && !this.isKnockedBack) {
+          this.triggerBossBarrierRepel(bossEntry.monster);
+        }
+      }
+    }
   }
 
   private spawnPlayer() {
@@ -153,14 +185,137 @@ export class ArenaScene extends Phaser.Scene {
 
   private drawMonsters() {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    STAGE_MONSTERS[this.stage.ordinal].forEach((monster,index) => {
+    STAGE_MONSTERS[this.stage.ordinal].forEach((monster, index) => {
       const source = this.textures.get(monster.art).getSourceImage() as HTMLImageElement;
       const height = monster.boss ? 110 : 82;
       const width = Math.min(monster.boss ? 210 : 100, height * source.width / source.height);
-      this.add.ellipse(monster.x,monster.y-3,width*.7,16,0x0b2d54,.3).setDepth(monster.y-2);
-      const sprite = this.add.image(monster.x,monster.y,monster.art).setOrigin(.5,1).setDisplaySize(width,height).setDepth(monster.y);
-      this.monsterSprites.push({monster,sprite});
-      if (!reducedMotion) this.tweens.add({targets:sprite,y:monster.y-4,duration:1500+index*180,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+      this.add.ellipse(monster.x, monster.y - 3, width * 0.7, 16, 0x0b2d54, 0.3).setDepth(monster.y - 2);
+
+      // Visual pulsing barrier aura for boss
+      if (monster.boss) {
+        const shield = this.add.circle(monster.x, monster.y - 35, 52);
+        shield.setStrokeStyle(3, 0xff3b30, 0.85);
+        shield.setFillStyle(0xff3b30, 0.12);
+        shield.setDepth(monster.y - 1);
+        if (!reducedMotion) {
+          this.tweens.add({
+            targets: shield,
+            scale: 1.15,
+            alpha: 0.35,
+            duration: 850,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+          });
+        }
+        this.bossShield = shield;
+      }
+
+      const sprite = this.add.image(monster.x, monster.y, monster.art).setOrigin(0.5, 1).setDisplaySize(width, height).setDepth(monster.y);
+      this.monsterSprites.push({ monster, sprite });
+      if (!reducedMotion) this.tweens.add({ targets: sprite, y: monster.y - 4, duration: 1500 + index * 180, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    });
+  }
+
+  private triggerBossBarrierRepel(monster: StageMonster) {
+    if (!this.player) return;
+
+    // 1. Synthesize punchy retro electrical zap / damage sound via Web Audio API
+    try {
+      const soundMgr = this.sound as any;
+      const ctx = soundMgr?.context as AudioContext | undefined;
+      if (ctx && ctx.state === 'running') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(170, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(32, ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.22);
+      }
+    } catch {}
+
+    // 2. Red camera flash & tactile screen shake
+    this.cameras.main.flash(200, 240, 45, 45);
+    this.cameras.main.shake(250, 0.016);
+
+    // 3. Player sprite damage flashing (alternating red and white)
+    this.tweens.addCounter({
+      from: 0,
+      to: 6,
+      duration: 450,
+      onUpdate: (tw) => {
+        const val = tw.getValue();
+        const v = Math.floor(typeof val === 'number' ? val : 0);
+        this.player?.setTint(v % 2 === 1 ? 0xff2a2a : 0xffffff);
+      },
+      onComplete: () => {
+        this.player?.clearTint();
+      }
+    });
+
+    // 4. Forcefield barrier shockwave expanding ring
+    const ring = this.add.circle(monster.x, monster.y - 30, 42);
+    ring.setStrokeStyle(4, 0xff3b30, 0.95);
+    ring.setFillStyle(0xff3b30, 0.25);
+    ring.setDepth(monster.y + 15);
+    this.tweens.add({
+      targets: ring,
+      radius: 120,
+      alpha: 0,
+      duration: 380,
+      ease: 'Cubic.easeOut',
+      onComplete: () => ring.destroy()
+    });
+
+    // 5. Knockback physics (rebounding player backwards away from boss)
+    const angle = Phaser.Math.Angle.Between(monster.x, monster.y, this.player.x, this.player.y);
+    const pushDist = 120;
+    const targetX = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * pushDist, 30, this.stage.worldSize - 30);
+    const targetY = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * pushDist, 30, this.stage.worldSize - 30);
+
+    this.isKnockedBack = true;
+    this.player.anims.play('knight-idle', true);
+    this.tweens.add({
+      targets: this.player,
+      x: targetX,
+      y: targetY,
+      duration: 280,
+      ease: 'Back.easeOut',
+      onUpdate: () => {
+        if (this.player && this.shadow) {
+          this.shadow.setPosition(this.player.x, this.player.y - 4);
+          this.player.setDepth(this.player.y);
+          this.shadow.setDepth(this.player.y - 1);
+        }
+      },
+      onComplete: () => {
+        this.isKnockedBack = false;
+      }
+    });
+
+    // 6. Floating barrier warning text above player
+    const popup = this.add.text(this.player.x, this.player.y - 55, '⚡ SHIELD BOSS AKTIF!\nKALAHKAN PENJAGA DULU!', {
+      fontFamily: '"Pixelify Sans", sans-serif',
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#ff4d4d',
+      stroke: '#081120',
+      strokeThickness: 4,
+      align: 'center'
+    }).setOrigin(0.5, 1).setDepth(this.stage.worldSize + 100);
+
+    this.tweens.add({
+      targets: popup,
+      y: popup.y - 35,
+      alpha: 0,
+      duration: 1300,
+      ease: 'Power2',
+      onComplete: () => popup.destroy()
     });
   }
 }
