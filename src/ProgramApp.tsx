@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ParticipantJourney } from './components/participant/ParticipantJourney';
 import type { ParticipantDemoState } from './lib/progress';
+import type { StageOrdinal } from './data/participantStages';
 import { StaffWorkspace } from './components/staff/StaffWorkspace';
 import { MentorReviewPanel } from './components/mentor/MentorReviewPanel';
 import { SelectionManager } from './components/admin/SelectionManager';
@@ -21,7 +22,7 @@ export default function ProgramApp({ mode = 'demo', participantId }: { mode?: 'd
   const base = mode === 'demo' ? '/demo' : '/play';
   const [hydrated, setHydrated] = useState(false);
   const [currentPath, setCurrentPath] = useState<PathCode>(saved.path);
-  const [currentStage, setCurrentStage] = useState<1 | 2 | 3>(1);
+  const [currentStage, setCurrentStage] = useState<StageOrdinal>(1);
   const [participantDemo, setParticipantDemo] = useState<ParticipantDemoState>(saved.progress);
   const [isMentorOpen, setIsMentorOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);

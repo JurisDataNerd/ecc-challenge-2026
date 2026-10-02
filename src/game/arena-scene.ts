@@ -55,12 +55,6 @@ export class ArenaScene extends Phaser.Scene {
       this.mapPixels = context.getImageData(0, 0, this.mapWidth, this.mapHeight).data;
     }
 
-    if (this.stage.ordinal === 1) {
-      const spawnPatch = this.add.graphics();
-      spawnPatch.fillStyle(0xc69c6d);
-      spawnPatch.fillRect(438 * scale, 410 * scale, 24 * scale, 35 * scale);
-    }
-
     this.drawBridge();
     this.drawCanopies(source);
     this.createAnimations();
@@ -108,7 +102,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private drawBridge() {
-    if (this.stage.ordinal !== 3) return;
+    if (this.stage.ordinal !== 1) return;
     const [x,y,w,h]=L3_BRIDGE, scale=this.stage.mapScale;
     // Reuse this map's rope bridge, with its water/grass background made transparent.
     const texture=this.textures.createCanvas('island-bridge',w,72);
@@ -124,9 +118,8 @@ export class ArenaScene extends Phaser.Scene {
 
   private drawCanopies(source: HTMLImageElement) {
     const scale=this.stage.mapScale;
-    const canopies=this.stage.ordinal===1
-      ? [[96,318,98,67,142,437],[255,64,78,66,304,176],[560,20,62,56,595,114],[389,289,56,34,406,353]]
-      : TREE_BASES[this.stage.ordinal].map(([x,y]) => [x-32,y-60,64,52,x,y]);
+    const canopies = (TREE_BASES[this.stage.ordinal] ?? []).map(([x,y]) => [x-32,y-60,64,52,x,y]);
+    if (canopies.length === 0) return;
     canopies.forEach(([x,y,w,h,baseX,baseY],index) => {
       const texture=this.textures.createCanvas(`canopy-${index}`,w,h);
       if (!texture) return;
@@ -136,7 +129,7 @@ export class ArenaScene extends Phaser.Scene {
       ctx.drawImage(source,x,y,w,h,0,0,w,h);
       // Clear only background connected to the crop edge; keep the enclosed leaf pixels intact.
       const pixels=ctx.getImageData(0,0,w,h), seen=new Uint8Array(w*h), queue:number[]=[];
-      const ground=new Set(this.stage.ordinal===1?[0x9ab037,0x7d9630,0xc69c6d]:[0x95bb1f,0x8fb31e]);
+      const ground=new Set([0x95bb1f,0x8fb31e]);
       const visit=(i:number)=>{if(i<0||i>=w*h||seen[i])return;seen[i]=1;const p=i*4,d=pixels.data;if(!d[p+3]||ground.has((d[p]<<16)|(d[p+1]<<8)|d[p+2])){d[p+3]=0;queue.push(i);}};
       for(let i=0;i<w*h;i++)if(!pixels.data[i*4+3])visit(i);
       for(let i=0;i<queue.length;i++){const p=queue[i];if(p%w)visit(p-1);if(p%w<w-1)visit(p+1);visit(p-w);visit(p+w);}

@@ -24,9 +24,9 @@ export const isEvidenceLink = (value: string) => {
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
 };
 function validProgress(p: unknown, scope: string): p is ParticipantDemoState {
-  if (!object(p) || typeof p.onboarded !== 'boolean' || ![1, 2, 3].includes(p.currentStage)
+  if (!object(p) || typeof p.onboarded !== 'boolean' || ![1, 2, 3, 4].includes(p.currentStage)
     || !['onboarding', 'expedition', 'stage', 'passport'].includes(p.screen)
-    || (p.introducedStages !== undefined && (!Array.isArray(p.introducedStages) || !p.introducedStages.every((stage: unknown) => [1,2,3].includes(stage as number))))
+    || (p.introducedStages !== undefined && (!Array.isArray(p.introducedStages) || !p.introducedStages.every((stage: unknown) => [1,2,3,4].includes(stage as number))))
     || !strings(p.quizAttempts) || !object(p.submissions) || !numbers(p.xpAwards) || !object(p.access)) return false;
   if (!['stage2', 'stage3'].every(name => {
     const gate = p.access[name];
@@ -37,7 +37,7 @@ function validProgress(p: unknown, scope: string): p is ParticipantDemoState {
     || typeof p.futureBase.target90d !== 'string' || !strings(p.futureBase.skills) || typeof p.futureBase.support !== 'string')) return false;
   if (p.onboarded && p.futureBase === null) return false;
   return Object.entries(p.submissions).every(([stage, s]) => {
-    if (!['1', '2', '3'].includes(stage) || !object(s) || s.stageOrdinal !== Number(stage)
+    if (!['1', '2', '3', '4'].includes(stage) || !object(s) || s.stageOrdinal !== Number(stage)
       || !['draft', 'submitted', 'in_review', 'changes_requested', 'reviewed'].includes(s.status)
       || !['id', 'enrollmentId', 'summary', 'reflection'].every(name => typeof s[name] === 'string')
       || !strings(s.evidenceLinks) || (s.status !== 'draft' && !s.evidenceLinks.every(isEvidenceLink)) || !Array.isArray(s.files)) return false;
@@ -79,7 +79,7 @@ export function saveProgress(scope: string, path: PathCode, progress: Participan
 export function journeyRoute(path: string, base: '/demo' | '/play', progress: ParticipantDemoState) {
   const suffix = path.split('?')[0].slice(base.length);
   const role = base === '/demo' && suffix === '/mentor' ? 'mentor' : base === '/demo' && suffix === '/admin' ? 'admin' : 'participant';
-  const match = /^\/stage\/([123])$/.exec(suffix);
+  const match = /^\/stage\/([1234])$/.exec(suffix);
   const stage = match ? Number(match[1]) as StageOrdinal : progress.currentStage;
   const screen = !progress.onboarded ? 'onboarding' : match ? 'stage' : suffix === '/passport' ? 'passport' : 'expedition';
   let redirect: string | null = null;
