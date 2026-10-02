@@ -4,7 +4,9 @@ import { CheckCircle, Circle, XCircle } from '@phosphor-icons/react';
 import type { PathCode, QuizQuestion } from '../../types';
 import { JourneyDialog } from '../ui/JourneyDialog';
 import { trackLabel } from '../../data/participantStages';
-import { CraftpixCultistBattleSprite, HeroBattleSprite } from '../game/BattleSprites';
+import { HeroBattleSprite } from '../game/BattleSprites';
+import { STAGE_MONSTERS, monsterArtPath } from '../../data/stageMonsters';
+import type { StageOrdinal } from '../../data/participantStages';
 
 export function InteractiveQuizModal({
   quiz,
@@ -14,6 +16,7 @@ export function InteractiveQuizModal({
   readOnly = false,
   onClose,
   onSubmit,
+  onCorrect,
 }: {
   quiz: QuizQuestion | null;
   currentPath?: PathCode;
@@ -22,6 +25,7 @@ export function InteractiveQuizModal({
   readOnly?: boolean;
   onClose: () => void;
   onSubmit: (quizId: string) => void;
+  onCorrect: (quizId: string) => void;
 }) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -45,6 +49,7 @@ export function InteractiveQuizModal({
   }, [battlePhase, quiz, selectedOptionId]);
 
   if (!quiz) return null;
+  const monster = STAGE_MONSTERS[quiz.stageOrdinal as StageOrdinal].find(item => item.quizId === quiz.id);
   const selected = quiz.options.find(option => option.id === selectedOptionId);
   const submitAnswer = () => {
     if (!selected || readOnly) return;
@@ -52,6 +57,7 @@ export function InteractiveQuizModal({
     setBattlePhase('attack');
     setEarnedXp(current => current || !alreadyAttempted);
     onSubmit(quiz.id);
+    if (selected.isCorrect) onCorrect(quiz.id);
   };
 
   return (
@@ -62,7 +68,7 @@ export function InteractiveQuizModal({
         </header>
         <p className="dialog-context"><strong>{trackLabel(currentPath)}:</strong> {trackFocus}</p>
         {!readOnly && <div className={`quiz-battle ${battlePhase === 'attack' ? selected?.isCorrect ? 'is-victory' : 'is-counterattack' : ''} ${battlePhase === 'result' && selected?.isCorrect ? 'is-defeated' : ''}`} aria-label={`Adegan kuis: karakter melawan ${quiz.enemyName}`}>
-          <div className="quiz-combatant quiz-enemy"><span>{quiz.enemyName}</span><div className="quiz-health"><i style={{ width: battlePhase === 'result' && selected?.isCorrect ? '0%' : '100%' }} /></div><CraftpixCultistBattleSprite stageOrdinal={quiz.stageOrdinal} size={110} /></div>
+          <div className="quiz-combatant quiz-enemy"><span>{quiz.enemyName}</span><div className="quiz-health"><i style={{ width: battlePhase === 'result' && selected?.isCorrect ? '0%' : '100%' }} /></div>{monster && <img className={`quiz-monster-art${monster.boss ? ' is-boss' : ''}`} src={monsterArtPath(monster.art)} alt="" />}</div>
           <strong className="quiz-battle-result" aria-hidden="true">{selected?.isCorrect ? 'Tepat!' : 'Coba lagi!'}</strong>
           {battlePhase === 'attack' && selected?.isCorrect && <span className="quiz-battle-slash" aria-hidden="true" />}
           <div className="quiz-combatant quiz-hero"><span>Knight</span><div className="quiz-health"><i style={{ width: `${playerHp}%` }} /></div><HeroBattleSprite pathCode="professional" actionState={battlePhase === 'attack' && selected?.isCorrect ? 'attack' : battlePhase === 'attack' ? 'hit' : 'idle'} size={110} /></div>

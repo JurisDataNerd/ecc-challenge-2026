@@ -11,10 +11,7 @@ export interface ParticipantStage {
   mapScale: number;
   worldSize: number;
   spawn: { x: number; y: number };
-  board: { x: number; y: number };
   accent: string;
-  boardName: string;
-  boardHint: string;
 }
 
 export const PARTICIPANT_STAGES: ParticipantStage[] = [
@@ -27,10 +24,7 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     mapScale: 2,
     worldSize: 2048,
     spawn: { x: 1856, y: 816 },
-    board: { x: 1772, y: 732 },
     accent: '#e9b95b',
-    boardName: 'Jurnal Lapangan',
-    boardHint: 'di halaman rumah beratap biru',
   },
   {
     ordinal: 2,
@@ -41,10 +35,7 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     mapScale: 2,
     worldSize: 2048,
     spawn: { x: 1000, y: 1660 },
-    board: { x: 890, y: 1230 },
     accent: '#61c6b1',
-    boardName: 'Bengkel Prototipe',
-    boardHint: 'di bengkel kastil, dekat meja kerja & blueprint',
   },
   {
     ordinal: 3,
@@ -55,24 +46,18 @@ export const PARTICIPANT_STAGES: ParticipantStage[] = [
     mapScale: 2,
     worldSize: 2048,
     spawn: { x: 1024, y: 1860 },
-    board: { x: 1024, y: 1150 },
     accent: '#d6a8ea',
-    boardName: 'Paviliun Pitch',
-    boardHint: 'di depan panggung presentasi benteng es',
   },
   {
     ordinal: 4,
     name: 'Impact',
     phase: 'L4',
     description: 'Rayakan dampak dan kelulusan perjalananmu di kayangan.',
-    mapPath: '/assets/dungeon/map_stage4_celestial.png',
+    mapPath: '/assets/dungeon/map_stage4_celestial_crisp.png',
     mapScale: 2,
     worldSize: 2048,
     spawn: { x: 1024, y: 1880 },
-    board: { x: 1024, y: 760 },
     accent: '#38bdf8',
-    boardName: 'Altar Kayangan',
-    boardHint: 'di depan altar agung bersayap emas',
   },
 ];
 

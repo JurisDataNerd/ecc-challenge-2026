@@ -202,6 +202,45 @@
 .participant-shell .future-base-summary h2 { margin:0 0 10px; font:600 20px 'Geist',sans-serif; }
 .participant-shell .future-base-summary p { color:#3b4f6d; font-size:14px; margin:8px 0 18px; }
 @media(max-width:700px) { .participant-shell .next-step { align-items:flex-start; flex-direction:column; gap:12px; } }
+/* Expedition dashboard: one clear route into the game, with progress alongside it. */
+.participant-shell .expedition-layout { width:min(1600px,calc(100% - 48px)); grid-template-columns:188px minmax(0,1fr) 260px; gap:28px; padding-top:28px; }
+.expedition-nav { position:sticky; top:24px; display:flex; flex-direction:column; gap:5px; min-width:0; padding:17px 12px; border:1px solid #dce2ea; border-radius:12px; background:#fff; }
+.expedition-nav-title { padding:5px 11px 14px; color:#3b4f6d; font-size:12px; font-weight:650; }
+.expedition-nav-link { display:flex; align-items:center; gap:11px; width:100%; min-height:42px; padding:0 11px; border:0; border-radius:7px; background:transparent; color:#0b2d54; text-align:left; text-decoration:none; font:600 13px 'Geist',sans-serif; cursor:pointer; }
+.expedition-nav-link:hover,.expedition-nav-link.is-current { background:#fff1e8; color:#a83e08; }
+.expedition-nav-link:focus-visible { outline:2px solid #f26f21; outline-offset:2px; }
+.expedition-nav-progress { display:flex; flex-direction:column; gap:5px; margin:20px 5px 0; padding:15px 12px; border-top:1px solid #dce2ea; background:#f4f5f8; border-radius:7px; }
+.expedition-nav-progress span,.expedition-nav-progress small { color:#3b4f6d; font-size:11px; line-height:1.5; }
+.expedition-nav-progress strong { color:#0b2d54; font-size:25px; line-height:1.1; }
+.participant-shell .expedition-heading { margin:0 0 19px; padding:2px 0 0; border:0; }
+.participant-shell .expedition-heading h1 { font-size:clamp(32px,3.2vw,46px); }
+.participant-shell .expedition-heading p { margin-top:7px; font-size:14px; }
+.participant-shell .next-step { min-height:206px; box-sizing:border-box; display:flex; align-items:center; margin-bottom:28px; padding:26px 30px; border:1px solid #dce2ea; border-radius:12px; background:linear-gradient(90deg,#fff 0%,#fff 49%,#ffffffd9 64%,#ffffff10 100%),var(--next-map) right center/44% auto no-repeat,#fff; overflow:hidden; }
+.participant-shell .next-step>div { max-width:65%; }
+.participant-shell .next-step-label { display:block; margin-bottom:8px; color:#a83e08; font-size:12px; font-weight:700; }
+.participant-shell .next-step strong { display:block; color:#0b2d54; font-size:clamp(22px,2vw,30px); line-height:1.15; }
+.participant-shell .next-step p { margin:7px 0 17px; }
+.participant-shell .next-step .button { min-height:42px; }
+.participant-shell .route-panel { min-height:0; overflow:visible; }
+.participant-shell .route-panel-top { margin:0 0 15px; color:#0b2d54; font-size:14px; }
+.participant-shell .route-panel-top strong { font-size:21px; }
+.participant-shell .stage-route { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.participant-shell .route-connector { display:none; }
+.participant-shell .stage-card { min-height:220px; border-radius:10px; padding:17px; }
+.participant-shell .stage-card-image { opacity:.68; }
+.participant-shell .stage-card-body strong { font-size:24px; }
+.participant-shell .stage-card-action { font-size:12px; }
+.participant-shell .route-summary { padding-top:15px; }
+.participant-shell .passport-rail { padding-top:0; }
+.participant-shell .passport-card,.participant-shell .rail-note { border-radius:10px; }
+.participant-shell .passport-card { padding:18px; }
+.participant-shell .passport-title { font-weight:700; }
+.participant-shell .passport-track strong { font-size:20px; }
+.participant-shell .rail-note strong { font-size:13px; }
+.participant-shell .rail-note p { font-size:11px; }
+@media(max-width:1150px) { .participant-shell .expedition-layout { grid-template-columns:150px minmax(0,1fr); gap:20px; } .participant-shell .passport-rail { grid-column:2; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+@media(max-width:900px) { .participant-shell .expedition-layout { width:100%; grid-template-columns:1fr; gap:18px; padding:18px 14px 28px; } .expedition-nav { position:static; flex-direction:row; align-items:center; padding:7px; } .expedition-nav-title,.expedition-nav-progress { display:none; } .expedition-nav-link { justify-content:center; width:auto; flex:1; font-size:11px; gap:6px; padding:0 6px; } .participant-shell .next-step { min-height:190px; padding:20px; } .participant-shell .next-step>div { max-width:75%; } .participant-shell .passport-rail { grid-column:1; } }
+@media(max-width:560px) { .participant-shell .stage-route,.participant-shell .passport-rail { grid-template-columns:1fr; } .participant-shell .stage-card { min-height:170px; } .participant-shell .next-step { background:linear-gradient(90deg,#fff 0%,#ffffffeb 69%,#ffffff7d 100%),var(--next-map) right center/auto 100% no-repeat,#fff; } .participant-shell .next-step>div { max-width:100%; } }
 /* The stage map fills the available browser viewport. */
 .participant-shell.is-playing .participant-topbar { display:none; }
 kbd { display:inline-block; font:600 12px/1.3 'Geist',sans-serif; padding:3px 6px; border:1px solid #dce2ea; border-radius:4px; background:#f4f5f8; color:#0b2d54; }
@@ -233,6 +272,8 @@ kbd { display:inline-block; font:600 12px/1.3 'Geist',sans-serif; padding:3px 6p
 .quiz-health { width:100px; height:7px; margin:5px 0 1px; border:1px solid #fff9; background:#17252b; }
 .quiz-health i { display:block; height:100%; background:#77c899; transition:width .3s ease-out; }
 .quiz-enemy .quiz-health i { background:#d88369; }
+.quiz-monster-art { width:110px; height:110px; object-fit:contain; filter:drop-shadow(0 5px 4px #07131f88); }
+.quiz-monster-art.is-boss { width:132px; }
 .quiz-battle-caption { position:absolute; left:0; right:0; bottom:0; z-index:2; min-height:27px; padding:4px 10px; background:#17312be8; text-align:center; font:500 12px/19px 'Geist',sans-serif; }
 .quiz-battle-result { position:absolute; top:48%; left:50%; z-index:2; transform:translate(-50%,-50%) scale(.8); opacity:0; color:#fff; font:700 22px 'Geist',sans-serif; text-shadow:0 2px 8px #000; pointer-events:none; }
 .quiz-battle-slash { position:absolute; top:53%; left:42%; z-index:2; width:110px; height:5px; transform:rotate(-45deg); background:#fff; box-shadow:0 0 12px 4px #eec871; animation:quiz-slash .65s ease-out both; pointer-events:none; }

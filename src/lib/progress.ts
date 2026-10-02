@@ -8,13 +8,14 @@ export type ParticipantDemoState = {
   currentStage: StageOrdinal;
   access: DemoAccessState;
   quizAttempts: string[];
+  quizDefeats: string[];
   introducedStages: StageOrdinal[];
   submissions: Record<number, Submission>;
   xpAwards: Record<string, number>;
 };
 export const INITIAL_PARTICIPANT_DEMO: ParticipantDemoState = {
   screen: 'onboarding', onboarded: false, futureBase: null, currentStage: 1,
-  access: DEFAULT_DEMO_ACCESS, quizAttempts: [], introducedStages: [], submissions: {}, xpAwards: {},
+  access: DEFAULT_DEMO_ACCESS, quizAttempts: [], quizDefeats: [], introducedStages: [], submissions: {}, xpAwards: {},
 };
 const key = (scope: string) => `fq:progress:v1:${scope}`;
 const object = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -27,7 +28,8 @@ function validProgress(p: unknown, scope: string): p is ParticipantDemoState {
   if (!object(p) || typeof p.onboarded !== 'boolean' || ![1, 2, 3, 4].includes(p.currentStage)
     || !['onboarding', 'expedition', 'stage', 'passport'].includes(p.screen)
     || (p.introducedStages !== undefined && (!Array.isArray(p.introducedStages) || !p.introducedStages.every((stage: unknown) => [1,2,3,4].includes(stage as number))))
-    || !strings(p.quizAttempts) || !object(p.submissions) || !numbers(p.xpAwards) || !object(p.access)) return false;
+    || !strings(p.quizAttempts) || (p.quizDefeats !== undefined && !strings(p.quizDefeats))
+    || !object(p.submissions) || !numbers(p.xpAwards) || !object(p.access)) return false;
   if (!['stage2', 'stage3'].every(name => {
     const gate = p.access[name];
     return object(gate) && typeof gate.resultPublished === 'boolean' && typeof gate.scheduledOpen === 'boolean'
@@ -59,6 +61,7 @@ export function loadProgress(scope: string): { path: PathCode; progress: Partici
     const record = JSON.parse(raw);
     if (record.version !== 1 || !['professional', 'social_impact', 'business'].includes(record.path) || !validProgress(record.progress, scope)) throw new Error();
     record.progress.introducedStages ??= [];
+    record.progress.quizDefeats ??= [];
     // Stored URLs are never trusted. Attachments are restored from their scoped IndexedDB keys.
     for (const submission of Object.values(record.progress.submissions) as Submission[]) {
       for (const file of submission.files) file.url = '';

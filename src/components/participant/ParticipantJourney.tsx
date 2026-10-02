@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle, XCircle } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, BookOpenText, Check, Compass, LockKey, MapTrifold, Medal, Sparkle, UserCircle } from '@phosphor-icons/react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FutureBase, PathCode, Submission, UserRole } from '../../types';
 import { OFFICIAL_PATHS, STAGE_BOSS_MISSIONS, STAGE_QUIZZES, TRACK_STAGE_FOCUS } from '../../data/mockQuests';
+import { STAGE_MONSTERS } from '../../data/stageMonsters';
 import { DEFAULT_DEMO_ACCESS, getStageAccess, PARTICIPANT_STAGES, trackLabel, type DemoAccessState, type ParticipantStage, type StageOrdinal, type StageGate } from '../../data/participantStages';
 import { BossMissionModal } from '../modals/BossMissionModal';
 import { InteractiveQuizModal } from '../modals/InteractiveQuizModal';
@@ -41,23 +42,23 @@ export function ParticipantJourney({
   const [pausePassportOpen, setPausePassportOpen] = useState(false);
   const openPause = useCallback(() => setPauseOpen(true), []);
   const closePause = () => { setPauseOpen(false); setPausePassportOpen(false); };
-  const [boardOpen, setBoardOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<(typeof STAGE_QUIZZES)[number] | null>(null);
   const [activeMission, setActiveMission] = useState<(typeof STAGE_BOSS_MISSIONS)[number] | null>(null);
-  const [returnToBoard, setReturnToBoard] = useState(false);
   const totalXp = useMemo(() => Object.values(demo.xpAwards).reduce((sum, amount) => sum + amount, 0), [demo.xpAwards]);
   const activeStage = PARTICIPANT_STAGES.find(stage => stage.ordinal === demo.currentStage) || PARTICIPANT_STAGES[0];
   const activeGate = getStageAccess(activeStage.ordinal, demo.access);
   const introOpen = demo.screen === 'stage' && !demo.introducedStages.includes(activeStage.ordinal);
   const beginStage = () => setDemo(current => ({ ...current, introducedStages: current.introducedStages.includes(activeStage.ordinal) ? current.introducedStages : [...current.introducedStages, activeStage.ordinal] }));
-  const nextQuiz = STAGE_QUIZZES.find(quiz => quiz.stageOrdinal === activeStage.ordinal && !demo.quizAttempts.includes(quiz.id));
+  const nextQuiz = STAGE_QUIZZES.find(quiz => quiz.stageOrdinal === activeStage.ordinal && !demo.quizDefeats.includes(quiz.id));
+  const bossDefeated = demo.quizDefeats.includes(STAGE_MONSTERS[activeStage.ordinal][2].quizId);
   const submission = demo.submissions[activeStage.ordinal];
   const objective = nextQuiz ? `Kerjakan kuis: ${nextQuiz.title}`
     : (submission?.status === 'changes_requested' || (submission?.status === 'draft' && submission.review?.decision === 'changes_requested')) ? 'Revisi misi mengikuti masukan mentor.'
     : ['submitted', 'in_review'].includes(submission?.status || '') ? 'Kiriman tersimpan. Tunggu hasil review mentor.'
     : submission?.status === 'reviewed' ? 'Stage selesai. Pilih stage berikutnya di peta ekspedisi.'
     : `Selesaikan misi: ${STAGE_BOSS_MISSIONS[activeStage.ordinal].title}`;
-  const openBoard = useCallback(() => setBoardOpen(true), []);
+  const openQuiz = useCallback((quizId: string) => setActiveQuiz(STAGE_QUIZZES.find(quiz => quiz.id === quizId) || null), []);
+  const openMission = useCallback(() => setActiveMission(STAGE_BOSS_MISSIONS[activeStage.ordinal]), [activeStage.ordinal]);
 
 
   const enterStage = (stage: ParticipantStage) => {
@@ -75,6 +76,9 @@ export function ParticipantJourney({
       quizAttempts: [...current.quizAttempts, quizId],
       xpAwards: { ...current.xpAwards, [`quiz:${quizId}`]: 10 },
     };
+  });
+  const markQuizDefeat = (quizId: string) => setDemo(current => current.quizDefeats.includes(quizId) ? current : {
+    ...current, quizDefeats: [...current.quizDefeats, quizId],
   });
 
   const saveMission = useCallback((submission: Submission) => setDemo(current => ({
@@ -111,29 +115,18 @@ export function ParticipantJourney({
           <Onboarding currentPath={currentPath} onContinue={onCompleteOnboarding} />
         ) : demo.screen === 'stage' ? (
           <section className="stage-screen">
-            <GameWorld key={activeStage.ordinal} stage={activeStage} paused={introOpen || pauseOpen || boardOpen || Boolean(activeQuiz) || Boolean(activeMission)} onOpenBoard={openBoard} onPause={openPause} />
+            <GameWorld key={activeStage.ordinal} stage={activeStage} paused={introOpen || pauseOpen || Boolean(activeQuiz) || Boolean(activeMission)} quizDefeats={demo.quizDefeats} onOpenQuiz={openQuiz} onPause={openPause} />
             {introOpen && <JourneyDialog titleId="stage-intro-title" className="stage-intro-dialog" onClose={beginStage}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="stage-intro-title">{activeStage.description}</h2><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p>
-              <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan {activeStage.boardName}</strong><p>Papan berada {activeStage.boardHint}. Dekati papan lalu tekan E atau sentuh tombol interaksi untuk membuka tugas.</p></div></div>
+              <div className="stage-first-step"><Compass size={24} /><div><strong>Temukan tiga monster kuis</strong><p>Jawab dua kuis untuk membuka boss. Setelah boss kalah, buka Misi dari menu Jeda.</p></div></div>
               <ControlsGuide />
               <footer className="dialog-actions"><span className="demo-note">Progres belajar disimpan sebagai simulasi di browser ini.</span><button className="button button-gold" onClick={beginStage}>Mulai menjelajah</button></footer>
             </JourneyDialog>}
             {pauseOpen && <JourneyDialog titleId="pause-title" className="pause-dialog" onClose={closePause}>
               <p className="dialog-stage-label">{activeStage.phase} {activeStage.name}</p><h2 id="pause-title">{pausePassportOpen ? 'Future Passport' : 'Permainan dijeda'}</h2>
-              {pausePassportOpen ? <><p>{trackLabel(currentPath)} · {totalXp.toLocaleString('id-ID')} XP</p><BaseMilestones milestones={PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo))} /></> : <><div className="pause-brief"><strong>Brief stage</strong><p>{activeStage.description}</p><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p></div><p><strong>Langkah berikutnya:</strong> {objective}</p><ControlsGuide /><p className="pause-instruction">Semua tugas dibuka dari {activeStage.boardName} {activeStage.boardHint}.</p></>}
-              <footer className="pause-actions"><button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button><button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button><button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
+              {pausePassportOpen ? <><p>{trackLabel(currentPath)} · {totalXp.toLocaleString('id-ID')} XP</p><BaseMilestones milestones={PARTICIPANT_STAGES.map(stage => isStageComplete(stage, demo))} /></> : <><div className="pause-brief"><strong>Brief stage</strong><p>{activeStage.description}</p><p>{TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}</p></div><p><strong>Langkah berikutnya:</strong> {objective}</p><p className="pause-instruction"><strong>Misi: {STAGE_BOSS_MISSIONS[activeStage.ordinal].title}</strong><br />{bossDefeated ? 'Terbuka. Pilih Buka misi di bawah.' : `Terkunci. Kalahkan ${3 - STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === activeStage.ordinal && demo.quizDefeats.includes(quiz.id)).length} monster kuis untuk membukanya.`}</p><ControlsGuide /></>}
+              <footer className="pause-actions"><button className="button button-gold" onClick={closePause}>Lanjutkan permainan</button>{!pausePassportOpen && <button className="button button-outline" disabled={!bossDefeated} onClick={() => { closePause(); openMission(); }}>Buka misi</button>}<button className="button button-quiet" onClick={() => setPausePassportOpen(value => !value)}><BookOpenText size={18} />{pausePassportOpen ? 'Kembali ke menu jeda' : 'Future Passport'}</button><button className="button button-quiet" onClick={() => { closePause(); toggleView('expedition'); }}>Kembali ke peta ekspedisi</button></footer>
             </JourneyDialog>}
-            <QuestBoard
-              isOpen={boardOpen}
-              stage={activeStage}
-              currentPath={currentPath}
-              readOnly={activeGate.readOnly}
-              quizAttempts={demo.quizAttempts}
-              submission={demo.submissions[activeStage.ordinal]}
-              onClose={() => setBoardOpen(false)}
-              onSelectQuiz={quiz => { setBoardOpen(false); setReturnToBoard(true); setActiveQuiz(quiz); }}
-              onSelectMission={mission => { setBoardOpen(false); setReturnToBoard(true); setActiveMission(mission); }}
-            />
             <InteractiveQuizModal
               key={activeQuiz?.id || 'no-quiz'}
               quiz={activeQuiz}
@@ -141,8 +134,9 @@ export function ParticipantJourney({
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               alreadyAttempted={Boolean(activeQuiz && demo.quizAttempts.includes(activeQuiz.id))}
               readOnly={activeGate.readOnly}
-              onClose={() => { setActiveQuiz(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
+              onClose={() => setActiveQuiz(null)}
               onSubmit={markQuizAttempt}
+              onCorrect={markQuizDefeat}
             />
             <BossMissionModal
               key={activeMission?.id || 'no-mission'}
@@ -153,7 +147,7 @@ export function ParticipantJourney({
               currentPath={currentPath}
               trackFocus={TRACK_STAGE_FOCUS[currentPath][activeStage.ordinal]}
               readOnly={activeGate.readOnly}
-              onClose={() => { setActiveMission(null); setBoardOpen(returnToBoard); setReturnToBoard(false); }}
+              onClose={() => setActiveMission(null)}
               onSubmitMission={saveMission}
             />
           </section>
@@ -194,7 +188,7 @@ function Onboarding({ currentPath, onContinue }: { currentPath: PathCode; onCont
         <div className="onboarding-art-shade" />
         <div className="onboarding-copy"><span className="eyebrow">Future Base · sebelum bootcamp</span>
           <h1>Siapkan perjalananmu.</h1>
-          <p>Pilih fokus belajar dan tuliskan tujuanmu. Setelah ini, kamu bisa menjelajahi ketiga stage.</p>
+          <p>Pilih fokus belajar dan tuliskan tujuanmu. Setelah ini, kamu bisa menjelajahi empat stage.</p>
           <div className="onboarding-sequence"><span className="sequence-active">01 Future Base</span><i /><span>02 L1 Discover</span><i /><span>03 L2 Build</span><i /><span>04 L3 Pitch</span></div>
         </div>
         
@@ -233,13 +227,18 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
   const next = PARTICIPANT_STAGES.find(item => getStageAccess(item.ordinal, demo.access).unlocked && !isStageComplete(item, demo)) || PARTICIPANT_STAGES[0];
   return (
     <div className="expedition-layout">
+      <nav className="expedition-nav" aria-label="Navigasi dashboard">
+        <span className="expedition-nav-title">Perjalananmu</span>
+        <a className="expedition-nav-link is-current" href="#stage-list"><MapTrifold size={19} /> Peta ekspedisi</a>
+        <button className="expedition-nav-link" onClick={onPassport}><BookOpenText size={19} /> Future Passport</button>
+        <div className="expedition-nav-progress"><span>Stage selesai</span><strong>{PARTICIPANT_STAGES.filter(item => isStageComplete(item, demo)).length} / {PARTICIPANT_STAGES.length}</strong><small>Lanjutkan dari stage yang tersedia.</small></div>
+      </nav>
       <section className="expedition-content">
-        <div className="page-kicker"><MapTrifold size={16} /> SIAP IMPACT 2026 <span>·</span> DEMO DATA</div>
-        <div className="expedition-heading"><div><h1>Peta Ekspedisi</h1><p>Mulai dari Discover atau lanjutkan stage yang ingin kamu kerjakan. Progresmu tersimpan di browser ini.</p></div><button className="button button-quiet" onClick={onPassport}><BookOpenText size={17} /> Future Passport</button></div>
-        <div className="next-step"><div><strong>{demo.quizAttempts.length || Object.keys(demo.submissions).length ? "Lanjutkan perjalanan" : "Siap mulai?"}</strong><p>{next.phase} {next.name}: {next.description}</p></div><button className="button button-gold" onClick={() => onEnter(next)}>Masuk {next.phase} <ArrowRight size={17} /></button></div>
-        <div className="route-panel">
-          <div className="route-panel-top"><span>BOOTCAMP · 3 STAGE</span><span className="demo-pill">STATUS SIMULASI</span></div>
-          <div className="stage-route" aria-label="Tiga stage bootcamp">
+        <div className="expedition-heading"><div><h1>Peta Ekspedisi</h1><p>Pilih stage, jelajahi peta, dan selesaikan tiga tantangan monster.</p></div></div>
+        <div className="next-step" style={{ '--next-map': `url('${next.mapPath}')` } as React.CSSProperties}><div><span className="next-step-label">Langkah berikutnya</span><strong>{next.phase} {next.name}</strong><p>{next.description}</p><button className="button button-gold" onClick={() => onEnter(next)}>{demo.quizAttempts.length || Object.keys(demo.submissions).length ? 'Lanjutkan stage' : 'Mulai bermain'} <ArrowRight size={17} /></button></div></div>
+        <div className="route-panel" id="stage-list">
+          <div className="route-panel-top"><strong>Pilih stage</strong><span>{PARTICIPANT_STAGES.length} stage bootcamp</span></div>
+          <div className="stage-route" aria-label="Empat stage bootcamp">
             {PARTICIPANT_STAGES.map((item, index) => {
               const itemAccess = getStageAccess(item.ordinal, demo.access);
               const complete = isStageComplete(item, demo);
@@ -251,7 +250,7 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
                   <span className="stage-card-image" style={{ backgroundImage: `linear-gradient(180deg,rgba(3,10,18,.02),rgba(3,10,18,.92)),url('${item.mapPath}')` }} />
                   <span className="stage-card-top"><span>{item.phase}</span>{itemAccess.unlocked ? <span className="stage-lock-open">OPEN</span> : <LockKey size={16} />}</span>
                   <span className="stage-card-body"><strong>{item.name}</strong><small>{item.description}</small><span className={`stage-status ${itemAccess.unlocked ? 'status-open' : ''}`}>{complete ? <Check size={13} /> : itemAccess.unlocked ? <Compass size={13} /> : <LockKey size={13} />}{status}</span></span>
-                  <span className="stage-card-action">{itemAccess.unlocked ? 'Masuk stage' : 'Lihat status'} <ArrowRight size={14} /></span>
+                  <span className="stage-card-action">{itemAccess.unlocked ? 'Jelajahi stage' : 'Lihat status'} <ArrowRight size={14} /></span>
                 </button>
               </div>;
             })}
@@ -263,7 +262,7 @@ function ExpeditionMap({ currentPath, demo, totalXp, selectedPreview, onPreview,
       </section>
       <aside className="passport-rail">
         <PassportSummary currentPath={currentPath} demo={demo} totalXp={totalXp} onOpen={onPassport} />
-        <div className="rail-note"><span className="eyebrow">CATATAN DEMO</span><p>Hasil, jadwal, status review, dan XP di layar ini adalah simulasi lokal.</p></div>
+        <div className="rail-note"><strong>Progres simulasi</strong><p>Hasil, jadwal, status review, dan XP tersimpan di browser ini sebagai data demo.</p></div>
       </aside>
     </div>
   );
@@ -327,42 +326,8 @@ function AccessControls({ access, onUpdateGate }: { access: DemoAccessState; onU
   </details>;
 }
 
-function QuestBoard({ isOpen, stage, currentPath, readOnly, quizAttempts, submission, onClose, onSelectQuiz, onSelectMission }: {
-  isOpen: boolean;
-  stage: ParticipantStage;
-  currentPath: PathCode;
-  readOnly: boolean;
-  quizAttempts: string[];
-  submission?: Submission;
-  onClose: () => void;
-  onSelectQuiz: (quiz: (typeof STAGE_QUIZZES)[number]) => void;
-  onSelectMission: (mission: (typeof STAGE_BOSS_MISSIONS)[number]) => void;
-}) {
-  if (!isOpen) return null;
-  const quizzes = STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === stage.ordinal);
-  const mission = STAGE_BOSS_MISSIONS[stage.ordinal];
-  return <JourneyDialog titleId="board-title" className="board-dialog" onClose={onClose}>
-      <header className="dialog-heading"><div><span className="eyebrow">{stage.phase} · PAPAN QUEST <i>DEMO</i></span><h2 id="board-title">{stage.boardName}</h2></div><button className="icon-button" onClick={onClose} aria-label="Tutup papan quest"><XCircle size={22} /></button></header>
-      <p className="dialog-context"><strong>{trackLabel(currentPath)}:</strong> {TRACK_STAGE_FOCUS[currentPath][stage.ordinal]}</p>
-      {readOnly && <div className="read-only-note">Stage sebelumnya tetap bisa dilihat setelah hasil tidak maju. Pengiriman baru ditutup.</div>}
-      <div className="quest-board-list">
-        {quizzes.map(quiz => <article className="quest-board-row" key={quiz.id}><span className="quest-type">QUIZ</span><div><strong>{quiz.title}</strong><small>{readOnly ? 'Mode lihat · tidak ada XP baru' : quizAttempts.includes(quiz.id) ? 'Percobaan tercatat · +10 XP hanya sekali' : 'Kirim satu jawaban · +10 XP percobaan pertama'}</small></div><button className="button button-outline" onClick={() => onSelectQuiz(quiz)}>{readOnly ? 'Lihat' : quizAttempts.includes(quiz.id) ? 'Ulangi' : 'Mulai'} <ArrowRight size={15} /></button></article>)}
-        {mission && <article className="quest-board-row"><span className="quest-type mission-type">MISI</span><div><strong>{mission.title}</strong><small>{readOnly ? `${missionState(submission)} · mode lihat` : `${missionState(submission)} · +20 XP setelah review diterima`}</small></div><button className="button button-outline" onClick={() => onSelectMission(mission)}>{readOnly ? 'Lihat' : submission?.status === 'changes_requested' ? 'Revisi' : submission?.status === 'draft' ? 'Lanjutkan draft' : submission?.status === 'reviewed' ? 'Lihat hasil' : submission ? 'Lihat kiriman' : 'Buka misi'} <ArrowRight size={15} /></button></article>}
-      </div>
-      <footer className="dialog-actions"><span className="demo-note">Percobaan, review, dan XP adalah simulasi lokal</span><button className="button button-quiet" onClick={onClose}>Kembali ke scene</button></footer>
-  </JourneyDialog>;
-}
-
-function missionState(submission?: Submission) {
-  if (!submission) return 'Siap dikerjakan';
-  if (submission.status === 'reviewed') return 'Diterima · review demo';
-  if (submission.status === 'changes_requested') return 'Perlu revisi · review demo';
-  if (submission.status === 'draft') return 'Draft tersimpan';
-  return 'Menunggu Mentor · demo';
-}
-
 function isStageComplete(stage: ParticipantStage, demo: ParticipantDemoState) {
-  const quizzesDone = STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === stage.ordinal).every(quiz => demo.quizAttempts.includes(quiz.id));
+  const quizzesDone = STAGE_QUIZZES.filter(quiz => quiz.stageOrdinal === stage.ordinal).every(quiz => demo.quizDefeats.includes(quiz.id));
   return quizzesDone && demo.submissions[stage.ordinal]?.status === 'reviewed';
 }
 
@@ -374,5 +339,5 @@ function lockMessage(reason: ReturnType<typeof getStageAccess>['reason']) {
 }
 
 function ControlsGuide() {
-  return <div className="controls-guide"><div><kbd>W A S D</kbd><span>atau tombol panah untuk bergerak</span></div><div><kbd>E</kbd><span>interaksi di dekat papan misi</span></div><div><kbd>Esc</kbd><span>jeda dan lanjutkan permainan</span></div><p>Di ponsel: gunakan joystick di kiri dan tombol interaksi di kanan. Mainkan dalam posisi lanskap.</p></div>;
+  return <div className="controls-guide"><div><kbd>W A S D</kbd><span>atau tombol panah untuk bergerak</span></div><div><kbd>E</kbd><span>interaksi di dekat monster atau penanda misi</span></div><div><kbd>Esc</kbd><span>jeda dan lanjutkan permainan</span></div><p>Di ponsel: gunakan joystick di kiri dan tombol interaksi di kanan. Mainkan dalam posisi lanskap.</p></div>;
 }

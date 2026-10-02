@@ -1,4 +1,4 @@
-import { PARTICIPANT_STAGES, type StageOrdinal } from '../data/participantStages';
+import type { StageOrdinal } from '../data/participantStages';
 export type Rect = readonly [x: number, y: number, width: number, height: number];
 export type Point = { x: number; y: number };
 // Source-image pixels, traced against the fixed maps. Tree coordinates are visible trunk bases.
@@ -105,8 +105,6 @@ const inside = (x: number, y: number, [rx,ry,w,h]: Rect) => x >= rx && x < rx+w 
 export function touchesTerrain(stage: StageOrdinal, scale: number, point: Point, pixels: Uint8ClampedArray | null, width: number, height: number) {
   const left = (point.x-12)/scale, right = (point.x+12)/scale;
   const top = (point.y-20)/scale, bottom = (point.y-3)/scale;
-  const board = PARTICIPANT_STAGES[stage-1].board;
-  if (point.x+12>board.x-8 && point.x-12<board.x+8 && point.y-3>board.y+8 && point.y-20<board.y+46) return true;
   const ladder = stage === 2 && L2_LADDERS.some(rect => inside(left,top,rect) && inside(right,bottom,rect));
   if (!ladder && TERRAIN[stage].some(([x,y,w,h]) => left < x+w && right > x && top < y+h && bottom > y)) return true;
   if (!pixels) return false;
