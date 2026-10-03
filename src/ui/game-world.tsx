@@ -37,10 +37,11 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onO
     const dx = event.clientX - (bounds.left + bounds.width / 2);
     const dy = event.clientY - (bounds.top + bounds.height / 2);
     const distance = Math.hypot(dx, dy);
-    const scale = distance > 42 ? 42 / distance : 1;
+    const radius = Math.min(bounds.width, bounds.height) * 0.38;
+    const scale = distance > radius ? radius / distance : 1;
     const x = dx * scale;
     const y = dy * scale;
-    movementRef.current = { x: x / 42, y: y / 42 };
+    movementRef.current = { x: x / radius, y: y / radius };
     setStickPosition({ x, y });
   }, []);
 
@@ -135,7 +136,7 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onO
   useEffect(() => { if (paused || portrait) endMovement(); }, [paused, portrait, endMovement]);
 
   const startMovement = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (pausedRef.current) return;
+    if (pausedRef.current || pointerIdRef.current !== null) return;
     event.preventDefault();
     pointerIdRef.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -144,6 +145,10 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onO
 
   const movePointer = (event: React.PointerEvent<HTMLDivElement>) => {
     if (pointerIdRef.current === event.pointerId) updateMovement(event);
+  };
+
+  const stopPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current === event.pointerId) endMovement();
   };
 
   return (
@@ -168,12 +173,12 @@ export function GameWorld({ stage, paused, quizDefeats, onOpenQuiz, onPause, onO
         className="virtual-stick"
         role="group"
         aria-disabled={paused}
-        aria-label="Kontrol gerak. Gunakan tombol panah atau WASD di komputer."
+        aria-label="Analog gerak. Geser untuk menggerakkan karakter. Tombol panah atau WASD juga tersedia."
         onPointerDown={startMovement}
         onPointerMove={movePointer}
-        onPointerUp={endMovement}
-        onPointerCancel={endMovement}
-        onLostPointerCapture={endMovement}
+        onPointerUp={stopPointer}
+        onPointerCancel={stopPointer}
+        onLostPointerCapture={stopPointer}
       >
         <span className="stick-ring" />
         <span className="stick-knob" style={{ transform: `translate(calc(-50% + ${stickPosition.x}px), calc(-50% + ${stickPosition.y}px))` }} />

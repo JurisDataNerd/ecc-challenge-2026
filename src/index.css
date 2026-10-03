@@ -439,7 +439,6 @@ canvas {
 .file-list button { border:0; color:#f39e8e; background:transparent; cursor:pointer; font-size:18px; }
 .form-error { margin:10px 0 0; color:#ffb5a8; font-size:11px; }
 
-@media (hover:hover) and (pointer:fine) { .virtual-stick { display:none; } }
 @media (max-width:900px) {
   .expedition-layout { grid-template-columns:minmax(0,1fr) 244px; gap:16px; }
   .route-panel { padding:15px; }

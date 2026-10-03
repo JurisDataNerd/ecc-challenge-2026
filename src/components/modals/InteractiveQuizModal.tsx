@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { CheckCircle, Circle, XCircle } from '@phosphor-icons/react';
 import type { PathCode, QuizQuestion, HeroGender } from '../../types';
 import { JourneyDialog } from '../ui/JourneyDialog';
-import { trackLabel } from '../../data/participantStages';
+import { PARTICIPANT_STAGES, trackLabel } from '../../data/participantStages';
 import { HeroBattleSprite } from '../game/BattleSprites';
 import { STAGE_MONSTERS, monsterArtPath } from '../../data/stageMonsters';
 import type { StageOrdinal } from '../../data/participantStages';
@@ -53,6 +53,7 @@ export function InteractiveQuizModal({
   }, [battlePhase, quiz, selectedOptionId]);
 
   if (!quiz) return null;
+  const stage = PARTICIPANT_STAGES.find(item => item.ordinal === quiz.stageOrdinal);
   const monster = STAGE_MONSTERS[quiz.stageOrdinal as StageOrdinal].find(item => item.quizId === quiz.id);
   const selected = quiz.options.find(option => option.id === selectedOptionId);
   const submitAnswer = () => {
@@ -71,11 +72,11 @@ export function InteractiveQuizModal({
           <button className="icon-button" onClick={onClose} aria-label="Tutup kuis"><XCircle size={22} /></button>
         </header>
         <p className="dialog-context"><strong>{trackLabel(currentPath)}:</strong> {trackFocus}</p>
-        {!readOnly && <div className={`quiz-battle ${battlePhase === 'attack' ? selected?.isCorrect ? 'is-victory' : 'is-counterattack' : ''} ${battlePhase === 'result' && selected?.isCorrect ? 'is-defeated' : ''}`} aria-label={`Adegan kuis: karakter melawan ${quiz.enemyName}`}>
+        {!readOnly && <div className={`quiz-battle ${battlePhase === 'attack' ? selected?.isCorrect ? 'is-victory' : 'is-counterattack' : ''} ${battlePhase === 'result' && selected?.isCorrect ? 'is-defeated' : ''}`} style={{ backgroundImage: stage ? `linear-gradient(180deg,rgba(8,31,61,.24),rgba(8,31,61,.62)),url('${stage.mapPath}')` : undefined, borderColor: stage?.accent }} aria-label={`Adegan kuis: karakter melawan ${quiz.enemyName}`}>
           <div className="quiz-combatant quiz-enemy"><span>{quiz.enemyName}</span><div className="quiz-health"><i style={{ width: battlePhase === 'result' && selected?.isCorrect ? '0%' : '100%' }} /></div>{monster && <img className={`quiz-monster-art${monster.boss ? ' is-boss' : ''}`} src={monsterArtPath(monster.art)} alt="" />}</div>
           <strong className="quiz-battle-result" aria-hidden="true">{selected?.isCorrect ? 'Tepat!' : 'Coba lagi!'}</strong>
           {battlePhase === 'attack' && selected?.isCorrect && <span className="quiz-battle-slash" aria-hidden="true" />}
-          <div className="quiz-combatant quiz-hero"><span>{heroCfg.characterName}</span><div className="quiz-health"><i style={{ width: `${playerHp}%` }} /></div><HeroBattleSprite pathCode={currentPath} gender={gender} actionState={battlePhase === 'attack' && selected?.isCorrect ? 'attack' : battlePhase === 'attack' ? 'hit' : 'idle'} size={110} /></div>
+          <div className="quiz-combatant quiz-hero"><span>{heroCfg.characterName}</span><div className="quiz-health"><i style={{ width: `${playerHp}%` }} /></div><HeroBattleSprite pathCode={currentPath} gender={gender} actionState={battlePhase === 'attack' && selected?.isCorrect ? 'attack' : battlePhase === 'attack' ? 'hit' : battlePhase === 'result' && selected?.isCorrect ? 'victory' : 'idle'} size={110} /></div>
           <div className="quiz-battle-caption" role="status">{battlePhase === 'idle' ? 'Pilih jawaban untuk memulai' : battlePhase === 'attack' ? selected?.isCorrect ? 'Serangan tepat!' : 'Musuh menyerang balik!' : selected?.isCorrect ? 'Musuh berhasil dikalahkan' : 'Pilih jawaban lain untuk mencoba lagi'}</div>
         </div>}
         <div className="quiz-scenario"><span className="eyebrow">STUDI KASUS</span><p>{quiz.scenario}</p></div>

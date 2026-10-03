@@ -4,8 +4,18 @@ import { AccountPage, type AccountMode } from './components/AccountPage';
 import { authErrorMessage, useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
 import { navigate, useLocation } from './lib/navigation';
+import { HERO_ROLES, type HeroRoleConfig } from './data/heroCharacters';
 
 const ProgramApp = lazy(() => import('./ProgramApp'));
+
+function TrackCharacters({ role }: { role: HeroRoleConfig }) {
+  return <div className="track-characters" aria-label={`Karakter ${role.roleName}`}>
+    {([role.male, role.female]).map((character) => <figure key={character.gender}>
+      <img src={character.illustrationUrl} alt={`${character.label}: ${character.characterName}`} loading="lazy" />
+      <figcaption>{character.label}</figcaption>
+    </figure>)}
+  </div>;
+}
 
 export function Brand({ linked = true }: { linked?: boolean } = {}) {
   const content = <><img src="/assets/ecc-logo.png" width="38" height="38" alt="" /><span>Future Quest<small>ECC · SIAP IMPACT 2026</small></span></>;
@@ -78,13 +88,14 @@ export default function App() {
             <h2 id="track-heading">Tiga track. Pilih peranmu.</h2>
             <p>Setiap jalur memiliki fokus tantangan dan karakter di dalam game sendiri. Pilih peran yang paling sesuai dengan minat dan tujuan belajarmu.</p>
           </div>
-          <ol className="landing-route">
+          <ol className="landing-route track-route">
             <li>
               <ShieldCheck size={28} weight="duotone" />
               <div>
                 <span className="pixel-label">Track 01 · Profesional</span>
                 <h3>Ksatria (Knight)</h3>
                 <p>Tantangan tata kelola, kepemimpinan kerja, dan pemecahan masalah operasional industri.</p>
+                <TrackCharacters role={HERO_ROLES.professional} />
               </div>
             </li>
             <li>
@@ -93,6 +104,7 @@ export default function App() {
                 <span className="pixel-label">Track 02 · Social Impact</span>
                 <h3>Mistikus (Mage)</h3>
                 <p>Tantangan pemberdayaan masyarakat, advokasi komunitas, dan dampak sosial nyata.</p>
+                <TrackCharacters role={HERO_ROLES.social_impact} />
               </div>
             </li>
             <li>
@@ -101,6 +113,7 @@ export default function App() {
                 <span className="pixel-label">Track 03 · Bisnis</span>
                 <h3>Assassin (Rogue)</h3>
                 <p>Tantangan validasi model bisnis, inovasi produk, dan strategi pasar yang siap tumbuh.</p>
+                <TrackCharacters role={HERO_ROLES.business} />
               </div>
             </li>
           </ol>

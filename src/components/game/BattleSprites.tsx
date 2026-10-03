@@ -1,6 +1,6 @@
 import React from 'react';
 import { PathCode, HeroGender } from '../../types';
-import { getHeroSprite, getSavedHeroGender } from '../../data/heroCharacters';
+import { getHeroCombatSprite, getSavedHeroGender } from '../../data/heroCharacters';
 
 interface HeroBattleSpriteProps {
   pathCode: PathCode;
@@ -16,14 +16,14 @@ export const HeroBattleSprite: React.FC<HeroBattleSpriteProps> = ({
   size = 120
 }) => {
   const activeGender = gender || getSavedHeroGender();
-  const spriteUrl = getHeroSprite(pathCode, activeGender);
+  const spriteUrl = getHeroCombatSprite(pathCode, activeGender);
   const isAttack = actionState === 'attack';
   const isHit = actionState === 'hit';
   const isVictory = actionState === 'victory';
 
-  // Row 0 = Idle (0px), Row 2 = Attack (-96px)
-  const rowY = isAttack ? -96 : 0;
-  const scale = (size / 48) * 1.85;
+  // Combat sheet rows: idle, attack, hit, victory.
+  const rowY = isAttack ? -96 : isHit ? -192 : isVictory ? -288 : 0;
+  const scale = (size / 96) * 1.5;
 
   return (
     <div 
@@ -42,26 +42,26 @@ export const HeroBattleSprite: React.FC<HeroBattleSpriteProps> = ({
 
       {/* Dynamic Animated Pixel Art Sprite */}
       <div 
-        className="w-12 h-12 origin-center"
+        className="w-40 h-24 origin-center"
         style={{
-          transform: `scale(${scale})`,
+          transform: `translateX(-18px) scale(${scale})`,
           backgroundImage: `url('${spriteUrl}')`,
           backgroundPosition: `0px ${rowY}px`,
           backgroundRepeat: 'no-repeat',
           imageRendering: 'pixelated',
-          animation: isAttack 
-            ? 'heroBattleAttack 0.45s steps(4) infinite' 
+          animation: isAttack || isHit
+            ? 'heroBattleAttack 0.45s steps(4) infinite'
             : 'heroBattleIdle 0.75s steps(4) infinite'
         }}
       />
       <style>{`
         @keyframes heroBattleIdle {
           from { background-position-x: 0px; }
-          to { background-position-x: -192px; }
+          to { background-position-x: -640px; }
         }
         @keyframes heroBattleAttack {
           from { background-position-x: 0px; }
-          to { background-position-x: -192px; }
+          to { background-position-x: -640px; }
         }
       `}</style>
     </div>

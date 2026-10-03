@@ -9,7 +9,9 @@ export interface HeroGenderConfig {
   title: string;
   description: string;
   avatarUrl: string;
+  illustrationUrl: string;
   spritesheetUrl: string;
+  combatSpritesheetUrl: string;
 }
 
 export interface HeroRoleConfig {
@@ -30,18 +32,22 @@ export const HERO_ROLES: Record<PathCode, HeroRoleConfig> = {
       label: 'Laki-laki',
       characterName: 'Valen the Steadfast',
       title: 'Ksatria Strategis (L)',
-      description: 'Rambut spiky cokelat, baju zirah baja perak berpadu jubah biru safir. Berwibawa dan penuh kepemimpinan.',
-      avatarUrl: '/assets/heroes/avatars/knight_male.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_knight_male_spritesheet.png'
+      description: 'Rambut pirang, zirah perak, perisai, pedang, dan jubah biru safir. Berwibawa dan penuh kepemimpinan.',
+      avatarUrl: '/assets/heroes/avatars/knight_male.webp',
+      illustrationUrl: '/assets/heroes/illustrations/knight_male.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_knight_male_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_knight_male_combat.png'
     },
     female: {
       gender: 'female',
       label: 'Perempuan',
       characterName: 'Aria the Vanguard',
       title: 'Ksatria Strategis (P)',
-      description: 'Kuncir kuda pirang elegan, zirah perak ramping dan jubah royal. Berintegritas tinggi dan analitis.',
-      avatarUrl: '/assets/heroes/avatars/knight_female.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_knight_female_spritesheet.png'
+      description: 'Kuncir kuda cokelat, zirah perak, perisai, pedang, dan jubah biru safir. Berintegritas tinggi dan analitis.',
+      avatarUrl: '/assets/heroes/avatars/knight_female.webp',
+      illustrationUrl: '/assets/heroes/illustrations/knight_female.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_knight_female_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_knight_female_combat.png'
     }
   },
   social_impact: {
@@ -54,17 +60,21 @@ export const HERO_ROLES: Record<PathCode, HeroRoleConfig> = {
       characterName: 'Rowan the Scholar',
       title: 'Mistikus Dampak (L)',
       description: 'Rambut dark teal rapi cendekiawan, mantel panjang zamrud bersulam emas dengan tongkat kristal runik.',
-      avatarUrl: '/assets/heroes/avatars/mage_male.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_mage_male_spritesheet.png'
+      avatarUrl: '/assets/heroes/avatars/mage_male.webp',
+      illustrationUrl: '/assets/heroes/illustrations/mage_male.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_mage_male_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_mage_male_combat.png'
     },
     female: {
       gender: 'female',
       label: 'Perempuan',
       characterName: 'Sylvia the Guardian',
       title: 'Mistikus Dampak (P)',
-      description: 'Rambut hitam kepang dedaunan, gaun hijau zamrud & putih gading. Hangat, peduli, dan membimbing komunitas.',
-      avatarUrl: '/assets/heroes/avatars/mage_female.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_mage_female_spritesheet.png'
+      description: 'Rambut cokelat bergelombang, jubah hijau zamrud dan putih gading, dengan tongkat kristal biru.',
+      avatarUrl: '/assets/heroes/avatars/mage_female.webp',
+      illustrationUrl: '/assets/heroes/illustrations/mage_female.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_mage_female_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_mage_female_combat.png'
     }
   },
   business: {
@@ -76,18 +86,22 @@ export const HERO_ROLES: Record<PathCode, HeroRoleConfig> = {
       label: 'Laki-laki',
       characterName: 'Ren the Venturer',
       title: 'Assassin Lincah (L)',
-      description: 'Rambut cokelat emas dengan bandana petualang, rompi kulit obsidian berbelati ganda. Cerdik dan tangkas.',
-      avatarUrl: '/assets/heroes/avatars/assassin_male.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_assassin_male_spritesheet.png'
+      description: 'Rambut cokelat pendek, zirah kulit arang, selempang merah tua, dan belati ganda. Cerdik dan tangkas.',
+      avatarUrl: '/assets/heroes/avatars/assassin_male.webp',
+      illustrationUrl: '/assets/heroes/illustrations/rogue_male.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_assassin_male_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_assassin_male_combat.png'
     },
     female: {
       gender: 'female',
       label: 'Perempuan',
       characterName: 'Lyra the Swift',
       title: 'Assassin Lincah (P)',
-      description: 'Rambut auburn kepang kembar, tunik pengintai oranye amber dengan bilah ganda lincah. Gesit menangkap peluang.',
-      avatarUrl: '/assets/heroes/avatars/assassin_female.png',
-      spritesheetUrl: '/assets/heroes/sprites/hero_assassin_female_spritesheet.png'
+      description: 'Rambut cokelat terikat, zirah kulit arang, selempang merah tua, dan belati ganda. Gesit menangkap peluang.',
+      avatarUrl: '/assets/heroes/avatars/assassin_female.webp',
+      illustrationUrl: '/assets/heroes/illustrations/rogue_female.webp',
+      spritesheetUrl: '/assets/heroes/sprites/hero_assassin_female_spritesheet.png',
+      combatSpritesheetUrl: '/assets/heroes/sprites/hero_assassin_female_combat.png'
     }
   }
 };
@@ -118,4 +132,8 @@ export function getHeroAvatar(pathCode: PathCode, gender: HeroGender = 'male'): 
 
 export function getHeroSprite(pathCode: PathCode, gender: HeroGender = 'male'): string {
   return getHeroConfig(pathCode, gender).spritesheetUrl;
+}
+
+export function getHeroCombatSprite(pathCode: PathCode, gender: HeroGender = 'male'): string {
+  return getHeroConfig(pathCode, gender).combatSpritesheetUrl;
 }
