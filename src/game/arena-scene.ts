@@ -8,6 +8,7 @@ import { getHeroSprite, getSavedHeroGender } from '../data/heroCharacters';
 
 export type StageEncounter = { id: string; name: string; locked: boolean };
 type Movement = { x: number; y: number };
+type Facing = 'down' | 'right' | 'up' | 'left';
 const MAP_SIZE = 640;
 const ENCOUNTER_RADIUS = 100;
 
@@ -22,6 +23,7 @@ export class ArenaScene extends Phaser.Scene {
   private bossShield: Phaser.GameObjects.Arc | null = null;
   private isKnockedBack = false;
   private lastKnockbackTime = 0;
+  private facing: Facing = 'down';
 
   constructor(
     private readonly stage: ParticipantStage,
@@ -39,7 +41,7 @@ export class ArenaScene extends Phaser.Scene {
     this.load.image('world-map', this.stage.mapPath);
     this.load.image('player-shadow', '/assets/mixel/MainCharacter%20v.1.0/MainC_Shadow.png');
     const heroSprite = this.heroSpritesheetUrl || getHeroSprite('professional', getSavedHeroGender());
-    this.load.spritesheet('knight', heroSprite, { frameWidth: 48, frameHeight: 48 });
+    this.load.spritesheet('hero', heroSprite, { frameWidth: 96, frameHeight: 96 });
     for (const monster of STAGE_MONSTERS[this.stage.ordinal]) this.load.image(monster.art, monsterArtPath(monster.art));
   }
 
@@ -91,13 +93,13 @@ export class ArenaScene extends Phaser.Scene {
       const input = this.readMovement();
       const { x, y } = input;
       if (Math.hypot(x, y) > 0.08) {
+        this.facing = Math.abs(x) > Math.abs(y) ? (x > 0 ? 'right' : 'left') : (y > 0 ? 'down' : 'up');
         const next = movePlayer(this.player, input, delta, this.stage.worldSize, point =>
           touchesTerrain(this.stage.ordinal, this.stage.mapScale, point, this.mapPixels, this.mapWidth, this.mapHeight)
           || this.monsterSprites.some(({ monster }) => Phaser.Math.Distance.Between(point.x, point.y, monster.x, monster.y) < (monster.boss ? (bossUnlocked ? 45 : 85) : 27)));
         const moved = next.x !== this.player.x || next.y !== this.player.y;
-        this.player.setPosition(next.x, next.y).anims.play(moved ? 'knight-walk' : 'knight-idle', true);
-        if (x) this.player.setFlipX(x < 0);
-      } else this.player.anims.play('knight-idle', true);
+        this.player.setPosition(next.x, next.y).anims.play(`hero-${this.facing}-${moved ? 'walk' : 'idle'}`, true);
+      } else this.player.anims.play(`hero-${this.facing}-idle`, true);
     }
 
     this.player.setDepth(this.player.y);
@@ -132,7 +134,7 @@ export class ArenaScene extends Phaser.Scene {
   private spawnPlayer() {
     const { x, y } = this.stage.spawn;
     this.shadow = this.add.image(x, y - 4, 'player-shadow').setDisplaySize(68, 40).setAlpha(0.8).setDepth(y - 1);
-    this.player = this.add.sprite(x, y, 'knight').setOrigin(0.5, 1).setScale(1.85).setDepth(y).play('knight-idle');
+    this.player = this.add.sprite(x, y, 'hero').setOrigin(0.5, 1).setScale(0.925).setDepth(y).play('hero-down-idle');
     const updateCamera = () => this.cameras.main.setZoom(Math.max(this.scale.width < 768 || this.scale.height < 480 ? 0.8 : 1, this.scale.width/this.stage.worldSize, this.scale.height/this.stage.worldSize));
     this.cameras.main.roundPixels = true;
     this.cameras.main.setBounds(0, 0, this.stage.worldSize, this.stage.worldSize).startFollow(this.player, true, 0.12, 0.12, 0, 32);
@@ -179,8 +181,12 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private createAnimations() {
-    this.anims.create({ key: 'knight-idle', frames: this.anims.generateFrameNumbers('knight', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
-    this.anims.create({ key: 'knight-walk', frames: this.anims.generateFrameNumbers('knight', { start: 4, end: 7 }), frameRate: 8, repeat: -1 });
+    (['down', 'right', 'up', 'left'] as const).forEach((direction, index) => {
+      const idleStart = index * 4;
+      const walkStart = (index + 4) * 4;
+      this.anims.create({ key: `hero-${direction}-idle`, frames: this.anims.generateFrameNumbers('hero', { start: idleStart, end: idleStart + 3 }), frameRate: 5, repeat: -1 });
+      this.anims.create({ key: `hero-${direction}-walk`, frames: this.anims.generateFrameNumbers('hero', { start: walkStart, end: walkStart + 3 }), frameRate: 8, repeat: -1 });
+    });
   }
 
   private drawMonsters() {
@@ -279,7 +285,7 @@ export class ArenaScene extends Phaser.Scene {
     const targetY = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * pushDist, 30, this.stage.worldSize - 30);
 
     this.isKnockedBack = true;
-    this.player.anims.play('knight-idle', true);
+    this.player.anims.play(`hero-${this.facing}-idle`, true);
     this.tweens.add({
       targets: this.player,
       x: targetX,

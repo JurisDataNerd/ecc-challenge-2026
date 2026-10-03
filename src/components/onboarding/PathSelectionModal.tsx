@@ -199,7 +199,7 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
                 <div className="my-3 flex items-center justify-center h-24 bg-[#03060c] border-2 border-slate-700 shadow-[inset_1px_1px_0_#000] relative overflow-hidden">
                   <div 
                     key={`${path.code}-${selectedGender}`}
-                    className="w-12 h-12 origin-center scale-[1.75]"
+                    className="w-24 h-24 origin-center scale-[0.85]"
                     style={{
                       backgroundImage: `url('${spriteSrc}')`,
                       backgroundPosition: '0px 0px',
@@ -226,7 +226,7 @@ export const PathSelectionModal: React.FC<PathSelectionModalProps> = ({
       <style>{`
         @keyframes cardAvatarAnim {
           from { background-position-x: 0px; }
-          to { background-position-x: -192px; }
+          to { background-position-x: -384px; }
         }
       `}</style>
 
